@@ -37,6 +37,14 @@ try:
     from distutils.command.build_py import build_py_2to3 as build_py
 except ImportError:
     from distutils.command.build_py import build_py
+
+try:
+    import Cython
+    from Cython.Distutils import build_ext
+    HAS_CYTHON = True
+except ImportError:
+    HAS_CYTHON = False
+
 from setupext import build_agg, build_gtkagg, build_tkagg,\
      build_macosx, build_ft2font, build_image, build_windowing, build_path, \
      build_contour, build_delaunay, build_gdk, \
@@ -130,6 +138,14 @@ build_contour(ext_modules, packages)
 build_delaunay(ext_modules, packages)
 build_path(ext_modules, packages)
 build_tri(ext_modules, packages)
+
+print_raw("")
+print_raw("OPTIONAL BUILD DEPENDENCIES")
+if HAS_CYTHON:
+    import Cython
+    print_status("Cython", Cython.__version__)
+else:
+    print_status("Cython", "not installed")
 
 print_raw("")
 print_raw("OPTIONAL BACKEND DEPENDENCIES")
@@ -254,6 +270,12 @@ for mod in ext_modules:
 
 print_raw("pymods %s" % py_modules)
 print_raw("packages %s" % packages)
+
+cmdclass = {}
+cmdclass['build_py'] = build_py
+if HAS_CYTHON:
+    cmdclass['build_ext'] = build_ext
+
 distrib = setup(name="matplotlib",
       version= __version__,
       description = "Python plotting package",
@@ -273,6 +295,6 @@ distrib = setup(name="matplotlib",
       ext_modules = ext_modules,
       package_dir = {'': 'lib'},
       package_data = package_data,
-      cmdclass = {'build_py': build_py},
+      cmdclass = cmdclass,
       **additional_params
       )

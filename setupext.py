@@ -83,6 +83,16 @@ from textwrap import fill
 from distutils.core import Extension
 import glob
 
+try:
+    import Cython
+    HAS_CYTHON = True
+    def cython_file(filename):
+        return filename + ".pyx"
+except ImportError:
+    HAS_CYTHON = False
+    def cython_file(filename):
+        return filename + ".c"
+
 if sys.version_info[0] < 3:
     import ConfigParser as configparser
     from cStringIO import StringIO
@@ -552,10 +562,7 @@ def add_numpy_flags(module):
 
 def add_png_flags(module):
     try_pkgconfig(module, 'libpng', 'png')
-    add_base_flags(module)
-    add_numpy_flags(module)
     module.libraries.append('z')
-    module.include_dirs.extend(['.'])
     module.libraries.extend(std_libs)
 
 def add_agg_flags(module):
@@ -1139,9 +1146,7 @@ def build_png(ext_modules, packages):
     global BUILT_PNG
     if BUILT_PNG: return # only build it if you you haven't already
 
-    deps = ['src/_png.cpp', 'src/mplutils.cpp']
-    deps.extend(glob.glob('CXX/*.cxx'))
-    deps.extend(glob.glob('CXX/*.c'))
+    deps = ['src/_png.cpp', cython_file('src/_png_wrapper')]
 
     module = make_extension(
         'matplotlib._png',
@@ -1150,7 +1155,9 @@ def build_png(ext_modules, packages):
         define_macros=defines
         )
 
+    add_base_flags(module)
     add_png_flags(module)
+    add_numpy_flags(module)
     ext_modules.append(module)
 
     BUILT_PNG = True
