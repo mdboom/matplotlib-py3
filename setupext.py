@@ -1157,7 +1157,7 @@ def build_png(ext_modules, packages):
     global BUILT_PNG
     if BUILT_PNG: return # only build it if you you haven't already
 
-    deps = ['src/_png.cpp', 'src/mplutils.cpp']
+    deps = ['src/_png.cpp', 'src/_png_wrapper.cpp', 'src/mplutils.cpp']
     deps.extend(glob.glob('CXX/*.cxx'))
     deps.extend(glob.glob('CXX/*.c'))
 
