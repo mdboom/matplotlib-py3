@@ -753,15 +753,9 @@ def check_for_tk():
         module = make_extension('test', [])
         try:
             explanation = add_tk_flags(module)
-        # except RuntimeError:
-        #     # This deals with the change in exception handling syntax in
-        #     # python 3. If we only need to support >= 2.6, we can just use the
-        #     # commented out lines below.
-        #     exc_type,exc,tb = sys.exc_info()
-        #     explanation = str(exc)
-        #     gotit = False
         except RuntimeError as e:
             explanation = str(e)
+            gotit = False
         else:
             if not find_include_file(module.include_dirs, "tk.h"):
                 message = 'Tkinter present, but header files are not found. ' + \

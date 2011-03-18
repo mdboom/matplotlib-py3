@@ -499,12 +499,12 @@ class FigureManagerGTK(FigureManagerBase):
         if (window_icon):
             try:
                 self.window.set_icon_from_file(window_icon)
-            except:
+            except Exception as e:
                 # some versions of gtk throw a glib.GError but not
                 # all, so I am not sure how to catch it.  I am unhappy
                 # diong a blanket catch here, but an not sure what a
                 # better way is - JDH
-                verbose.report('Could not load matplotlib icon: %s' % sys.exc_info()[1])
+                verbose.report('Could not load matplotlib icon: %s' % str(e))
 
         self.vbox = gtk.VBox()
         self.window.add(self.vbox)
@@ -1227,9 +1227,9 @@ try:
     else:
         icon_filename = 'matplotlib.svg'
     window_icon = os.path.join(matplotlib.rcParams['datapath'], 'images', icon_filename)
-except:
+except Exception as e:
     window_icon = None
-    verbose.report('Could not load matplotlib icon: %s' % sys.exc_info()[1])
+    verbose.report('Could not load matplotlib icon: %s' % str(e))
 
 def error_msg_gtk(msg, parent=None):
     if parent is not None: # find the toplevel gtk.Window
