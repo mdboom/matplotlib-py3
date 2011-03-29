@@ -309,12 +309,10 @@ _png_module::read_png_uint8(const Py::Tuple& args)
     return Py::asObject(_read_png(args[0], NPY_UINT8));
 }
 
-extern "C"
-#if PY3K
 PyMODINIT_FUNC
+#if PY3K
 PyInit__png(void)
 #else
-PyMODINIT_FUNC
 init_png(void)
 #endif
 {
