@@ -49,337 +49,9 @@
 #define M_PI_2     1.57079632679489661923
 #endif
 
-
-/*
- Convert dashes from the Python representation as nested sequences to
- the C++ representation as a std::vector<std::pair<double, double> >
- (GCAgg::dash_t) */
-void
-convert_dashes(const Py::Tuple& dashes, double dpi,
-               GCAgg::dash_t& dashes_out, double& dashOffset_out)
-{
-    if (dashes.length() != 2)
-    {
-        throw Py::ValueError(
-            Printf("Dash descriptor must be a length 2 tuple; found %d",
-                   dashes.length()).str()
-        );
-    }
-
-    dashes_out.clear();
-    dashOffset_out = 0.0;
-    if (dashes[0].ptr() == Py_None)
-    {
-        return;
-    }
-
-    dashOffset_out = double(Py::Float(dashes[0])) * dpi / 72.0;
-
-    Py::SeqBase<Py::Object> dashSeq = dashes[1];
-
-    size_t Ndash = dashSeq.length();
-    if (Ndash % 2 != 0)
-    {
-        throw Py::ValueError(
-            Printf("Dash sequence must be an even length sequence; found %d", Ndash).str()
-        );
-    }
-
-    dashes_out.clear();
-    dashes_out.reserve(Ndash / 2);
-
-    double val0, val1;
-    for (size_t i = 0; i < Ndash; i += 2)
-    {
-        val0 = double(Py::Float(dashSeq[i])) * dpi / 72.0;
-        val1 = double(Py::Float(dashSeq[i+1])) * dpi / 72.0;
-        dashes_out.push_back(std::make_pair(val0, val1));
-    }
-}
-
-
-Py::Object
-BufferRegion::to_string(const Py::Tuple &args)
-{
-    // owned=true to prevent memory leak
-    #if PY3K
-    return Py::Bytes(PyBytes_FromStringAndSize((const char*)data, height*stride), true);
-    #else
-    return Py::String(PyString_FromStringAndSize((const char*)data, height*stride), true);
-    #endif
-}
-
-
-Py::Object
-BufferRegion::set_x(const Py::Tuple &args)
-{
-    args.verify_length(1);
-    size_t x = (long) Py::Int(args[0]);
-    rect.x1 = x;
-    return Py::Object();
-}
-
-
-Py::Object
-BufferRegion::set_y(const Py::Tuple &args)
-{
-    args.verify_length(1);
-    size_t y = (long)Py::Int(args[0]);
-    rect.y1 = y;
-    return Py::Object();
-}
-
-
-Py::Object
-BufferRegion::get_extents(const Py::Tuple &args)
-{
-    args.verify_length(0);
-
-    Py::Tuple extents(4);
-    extents[0] = Py::Int(rect.x1);
-    extents[1] = Py::Int(rect.y1);
-    extents[2] = Py::Int(rect.x2);
-    extents[3] = Py::Int(rect.y2);
-
-    return extents;
-}
-
-
-Py::Object
-BufferRegion::to_string_argb(const Py::Tuple &args)
-{
-    // owned=true to prevent memory leak
-    Py_ssize_t length;
-    unsigned char* pix;
-    unsigned char* begin;
-    unsigned char* end;
-    unsigned char tmp;
-    size_t i, j;
-
-    #if PY3K
-    PyObject* str = PyBytes_FromStringAndSize((const char*)data, height * stride);
-    if (PyBytes_AsStringAndSize(str, (char**)&begin, &length))
-    {
-        throw Py::TypeError("Could not create memory for blit");
-    }
-    #else
-    PyObject* str = PyString_FromStringAndSize((const char*)data, height * stride);
-    if (PyString_AsStringAndSize(str, (char**)&begin, &length))
-    {
-        throw Py::TypeError("Could not create memory for blit");
-    }
-    #endif
-
-
-    pix = begin;
-    end = begin + (height * stride);
-    for (i = 0; i < (size_t)height; ++i)
-    {
-        pix = begin + i * stride;
-        for (j = 0; j < (size_t)width; ++j)
-        {
-            // Convert rgba to argb
-            tmp = pix[2];
-            pix[2] = pix[0];
-            pix[0] = tmp;
-            pix += 4;
-        }
-    }
-
-    return Py::String(str, true);
-}
-
-
-GCAgg::GCAgg(const Py::Object &gc, double dpi) :
-        dpi(dpi), isaa(true), dashOffset(0.0)
-{
-    _VERBOSE("GCAgg::GCAgg");
-    linewidth = points_to_pixels(gc.getAttr("_linewidth")) ;
-    alpha = Py::Float(gc.getAttr("_alpha"));
-    color = get_color(gc);
-    _set_antialiased(gc);
-    _set_linecap(gc);
-    _set_joinstyle(gc);
-    _set_dashes(gc);
-    _set_clip_rectangle(gc);
-    _set_clip_path(gc);
-    _set_snap(gc);
-    _set_hatch_path(gc);
-}
-
-
-void
-GCAgg::_set_antialiased(const Py::Object& gc)
-{
-    _VERBOSE("GCAgg::antialiased");
-    isaa = Py::Boolean(gc.getAttr("_antialiased"));
-}
-
-
-agg::rgba
-GCAgg::get_color(const Py::Object& gc)
-{
-    _VERBOSE("GCAgg::get_color");
-    Py::Tuple rgb = Py::Tuple(gc.getAttr("_rgb"));
-
-    double alpha = Py::Float(gc.getAttr("_alpha"));
-
-    double r = Py::Float(rgb[0]);
-    double g = Py::Float(rgb[1]);
-    double b = Py::Float(rgb[2]);
-    return agg::rgba(r, g, b, alpha);
-}
-
-
-double
-GCAgg::points_to_pixels(const Py::Object& points)
-{
-    _VERBOSE("GCAgg::points_to_pixels");
-    double p = Py::Float(points) ;
-    return p * dpi / 72.0;
-}
-
-
-void
-GCAgg::_set_linecap(const Py::Object& gc)
-{
-    _VERBOSE("GCAgg::_set_linecap");
-
-    std::string capstyle = Py::String(gc.getAttr("_capstyle"));
-
-    if (capstyle == "butt")
-    {
-        cap = agg::butt_cap;
-    }
-    else if (capstyle == "round")
-    {
-        cap = agg::round_cap;
-    }
-    else if (capstyle == "projecting")
-    {
-        cap = agg::square_cap;
-    }
-    else
-    {
-        throw Py::ValueError(Printf("GC _capstyle attribute must be one of butt, round, projecting; found %s", capstyle.c_str()).str());
-    }
-}
-
-
-void
-GCAgg::_set_joinstyle(const Py::Object& gc)
-{
-    _VERBOSE("GCAgg::_set_joinstyle");
-
-    std::string joinstyle = Py::String(gc.getAttr("_joinstyle"));
-
-    if (joinstyle == "miter")
-    {
-        join = agg::miter_join_revert;
-    }
-    else if (joinstyle == "round")
-    {
-        join = agg::round_join;
-    }
-    else if (joinstyle == "bevel")
-    {
-        join = agg::bevel_join;
-    }
-    else
-    {
-        throw Py::ValueError(Printf("GC _joinstyle attribute must be one of butt, round, projecting; found %s", joinstyle.c_str()).str());
-    }
-}
-
-
-void
-GCAgg::_set_dashes(const Py::Object& gc)
-{
-    //return the dashOffset, dashes sequence tuple.
-    _VERBOSE("GCAgg::_set_dashes");
-
-    Py::Object dash_obj(gc.getAttr("_dashes"));
-    if (dash_obj.ptr() == Py_None)
-    {
-        dashes.clear();
-        return;
-    }
-
-    convert_dashes(dash_obj, dpi, dashes, dashOffset);
-}
-
-
-void
-GCAgg::_set_clip_rectangle(const Py::Object& gc)
-{
-    //set the clip rectangle from the gc
-
-    _VERBOSE("GCAgg::_set_clip_rectangle");
-
-    Py::Object o(gc.getAttr("_cliprect"));
-    cliprect = o;
-}
-
-
-void
-GCAgg::_set_clip_path(const Py::Object& gc)
-{
-    //set the clip path from the gc
-
-    _VERBOSE("GCAgg::_set_clip_path");
-
-    Py::Object method_obj = gc.getAttr("get_clip_path");
-    Py::Callable method(method_obj);
-    Py::Tuple path_and_transform = method.apply(Py::Tuple());
-    if (path_and_transform[0].ptr() != Py_None)
-    {
-        clippath = path_and_transform[0];
-        clippath_trans = py_to_agg_transformation_matrix(path_and_transform[1].ptr());
-    }
-}
-
-
-void
-GCAgg::_set_snap(const Py::Object& gc)
-{
-    //set the snap setting
-
-    _VERBOSE("GCAgg::_set_snap");
-
-    Py::Object method_obj = gc.getAttr("get_snap");
-    Py::Callable method(method_obj);
-    Py::Object py_snap = method.apply(Py::Tuple());
-    if (py_snap.isNone())
-    {
-        snap_mode = SNAP_AUTO;
-    }
-    else if (py_snap.isTrue())
-    {
-        snap_mode = SNAP_TRUE;
-    }
-    else
-    {
-        snap_mode = SNAP_FALSE;
-    }
-}
-
-
-void
-GCAgg::_set_hatch_path(const Py::Object& gc)
-{
-    _VERBOSE("GCAgg::_set_hatch_path");
-
-    Py::Object method_obj = gc.getAttr("get_hatch_path");
-    Py::Callable method(method_obj);
-    hatchpath = method.apply(Py::Tuple());
-    if (hatchpath.ptr() == NULL)
-        throw Py::Exception();
-}
-
-
-const size_t
-RendererAgg::PIXELS_PER_INCH(96);
-
+/**********************************************************************
+ RendererAgg
+ **********************************************************************/
 
 RendererAgg::RendererAgg(unsigned int width, unsigned int height, double dpi,
                          int debug) :
@@ -419,6 +91,13 @@ RendererAgg::RendererAgg(unsigned int width, unsigned int height, double dpi,
                                 HATCH_SIZE*4);
 }
 
+RendererAgg::~RendererAgg()
+{
+    _VERBOSE("RendererAgg::~RendererAgg");
+
+    delete [] alphaBuffer;
+    delete [] pixBuffer;
+}
 
 void
 RendererAgg::create_alpha_buffers()
@@ -433,81 +112,31 @@ RendererAgg::create_alpha_buffers()
     }
 }
 
-
 template<class R>
 void
-RendererAgg::set_clipbox(const Py::Object& cliprect, R& rasterizer)
+RendererAgg::set_clipbox(bool has_cliprect, const agg::rect_d& cliprect, R& rasterizer)
 {
-    //set the clip rectangle from the gc
-
-    _VERBOSE("RendererAgg::set_clipbox");
-
-    double l, b, r, t;
-    if (py_convert_bbox(cliprect.ptr(), l, b, r, t))
+    if (has_cliprect)
     {
-        rasterizer.clip_box(int(mpl_round(l)), height - int(mpl_round(b)),
-                            int(mpl_round(r)), height - int(mpl_round(t)));
+        rasterizer.clip_box(int(mpl_round(cliprect.x1)),
+                            height - int(mpl_round(cliprect.y1)),
+                            int(mpl_round(cliprect.x2)),
+                            height - int(mpl_round(cliprect.y2)));
     }
     else
     {
         rasterizer.clip_box(0, 0, width, height);
     }
-
-    _VERBOSE("RendererAgg::set_clipbox done");
 }
 
-
-std::pair<bool, agg::rgba>
-RendererAgg::_get_rgba_face(const Py::Object& rgbFace, double alpha)
+BufferRegion*
+RendererAgg::copy_from_bbox(const agg::rect_d &in_rect)
 {
-    _VERBOSE("RendererAgg::_get_rgba_face");
-    std::pair<bool, agg::rgba> face;
-
-    if (rgbFace.ptr() == Py_None)
-    {
-        face.first = false;
-    }
-    else
-    {
-        face.first = true;
-        Py::Tuple rgb = Py::Tuple(rgbFace);
-        face.second = rgb_to_color(rgb, alpha);
-    }
-    return face;
-}
-
-
-Py::Object
-RendererAgg::copy_from_bbox(const Py::Tuple& args)
-{
-    //copy region in bbox to buffer and return swig/agg buffer object
-    args.verify_length(1);
-
-    Py::Object box_obj = args[0];
-    double l, b, r, t;
-    if (!py_convert_bbox(box_obj.ptr(), l, b, r, t))
-    {
-        throw Py::TypeError("Invalid bbox provided to copy_from_bbox");
-    }
-
-    agg::rect_i rect((int)l, height - (int)t, (int)r, height - (int)b);
+    agg::rect_i rect((int)in_rect.x1, height - (int)in_rect.y1,
+                     (int)in_rect.x2, height - (int)in_rect.y2);
 
     BufferRegion* reg = NULL;
-    try
-    {
-        reg = new BufferRegion(rect, true);
-    }
-    catch (...)
-    {
-        throw Py::MemoryError(
-            "RendererAgg::copy_from_bbox could not allocate memory for buffer");
-    }
-
-    if (!reg)
-    {
-        throw Py::MemoryError(
-            "RendererAgg::copy_from_bbox could not allocate memory for buffer");
-    }
+    reg = new BufferRegion(rect, true);
 
     try
     {
@@ -521,22 +150,18 @@ RendererAgg::copy_from_bbox(const Py::Tuple& args)
     catch (...)
     {
         delete reg;
-        throw Py::RuntimeError("An unknown error occurred in copy_from_bbox");
+        throw "An unknown error occurred in copy_from_bbox";
     }
-    return Py::asObject(reg);
+
+    return reg;
 }
 
-
-Py::Object
-RendererAgg::restore_region(const Py::Tuple& args)
+void
+RendererAgg::restore_region(const BufferRegion* const region)
 {
-    //copy BufferRegion to buffer
-    args.verify_length(1);
-    BufferRegion* region  = static_cast<BufferRegion*>(args[0].ptr());
-
     if (region->data == NULL)
     {
-        throw Py::ValueError("Cannot restore_region from NULL data");
+        throw "Cannot restore_region from NULL data";
     }
 
     agg::rendering_buffer rbuf;
@@ -546,39 +171,17 @@ RendererAgg::restore_region(const Py::Tuple& args)
                 region->stride);
 
     rendererBase.copy_from(rbuf, 0, region->rect.x1, region->rect.y1);
-
-    return Py::Object();
 }
 
-
 // Restore the part of the saved region with offsets
-Py::Object
-RendererAgg::restore_region2(const Py::Tuple& args)
+void
+RendererAgg::restore_region2(
+    const BufferRegion* const region,
+    int x, int y, int xx1, int yy1, int xx2, int yy2)
 {
-    //copy BufferRegion to buffer
-    args.verify_length(7);
-
-    int x(0), y(0), xx1(0), yy1(0), xx2(0), yy2(0);
-    try
-    {
-        xx1 = Py::Int(args[1]);
-        yy1 = Py::Int(args[2]);
-        xx2 = Py::Int(args[3]);
-        yy2 = Py::Int(args[4]);
-        x = Py::Int(args[5]);
-        y = Py::Int(args[6]);
-    }
-    catch (Py::TypeError)
-    {
-        throw Py::TypeError("Invalid input arguments to restore_region2");
-    }
-
-
-    BufferRegion* region  = static_cast<BufferRegion*>(args[0].ptr());
-
     if (region->data == NULL)
     {
-        throw Py::ValueError("Cannot restore_region from NULL data");
+        throw "Cannot restore_region from NULL data";
     }
 
     agg::rect_i rect(xx1 - region->rect.x1, (yy1 - region->rect.y1),
@@ -591,244 +194,7 @@ RendererAgg::restore_region2(const Py::Tuple& args)
                 region->stride);
 
     rendererBase.copy_from(rbuf, &rect, x, y);
-
-    return Py::Object();
 }
-
-
-bool
-RendererAgg::render_clippath(const Py::Object& clippath,
-                             const agg::trans_affine& clippath_trans)
-{
-    typedef agg::conv_transform<PathIterator> transformed_path_t;
-    typedef agg::conv_curve<transformed_path_t> curve_t;
-
-    bool has_clippath = (clippath.ptr() != Py_None);
-
-    if (has_clippath &&
-        (clippath.ptr() != lastclippath.ptr() ||
-         clippath_trans != lastclippath_transform))
-    {
-        create_alpha_buffers();
-        agg::trans_affine trans(clippath_trans);
-        trans *= agg::trans_affine_scaling(1.0, -1.0);
-        trans *= agg::trans_affine_translation(0.0, (double)height);
-
-        PathIterator clippath_iter(clippath);
-        rendererBaseAlphaMask.clear(agg::gray8(0, 0));
-        transformed_path_t transformed_clippath(clippath_iter, trans);
-        agg::conv_curve<transformed_path_t> curved_clippath(transformed_clippath);
-        theRasterizer.add_path(curved_clippath);
-        rendererAlphaMask.color(agg::gray8(255, 255));
-        agg::render_scanlines(theRasterizer, scanlineAlphaMask, rendererAlphaMask);
-        lastclippath = clippath;
-        lastclippath_transform = clippath_trans;
-    }
-
-    return has_clippath;
-}
-
-#define MARKER_CACHE_SIZE 512
-
-
-Py::Object
-RendererAgg::draw_markers(const Py::Tuple& args)
-{
-    typedef agg::conv_transform<PathIterator>                  transformed_path_t;
-    typedef PathSnapper<transformed_path_t>                    snap_t;
-    typedef agg::conv_curve<snap_t>                            curve_t;
-    typedef agg::conv_stroke<curve_t>                          stroke_t;
-    typedef agg::pixfmt_amask_adaptor<pixfmt, alpha_mask_type> pixfmt_amask_type;
-    typedef agg::renderer_base<pixfmt_amask_type>              amask_ren_type;
-    typedef agg::renderer_scanline_aa_solid<amask_ren_type>    amask_aa_renderer_type;
-    typedef agg::renderer_scanline_bin_solid<amask_ren_type>   amask_bin_renderer_type;
-    args.verify_length(5, 6);
-
-    Py::Object        gc_obj          = args[0];
-    Py::Object        marker_path_obj = args[1];
-    agg::trans_affine marker_trans    = py_to_agg_transformation_matrix(args[2].ptr());
-    Py::Object        path_obj        = args[3];
-    agg::trans_affine trans           = py_to_agg_transformation_matrix(args[4].ptr());
-    Py::Object        face_obj;
-    if (args.size() == 6)
-    {
-        face_obj = args[5];
-    }
-
-    GCAgg gc(gc_obj, dpi);
-
-    // Deal with the difference in y-axis direction
-    marker_trans *= agg::trans_affine_scaling(1.0, -1.0);
-    trans *= agg::trans_affine_scaling(1.0, -1.0);
-    trans *= agg::trans_affine_translation(0.0, (double)height);
-
-    PathIterator       marker_path(marker_path_obj);
-    transformed_path_t marker_path_transformed(marker_path, marker_trans);
-    snap_t             marker_path_snapped(marker_path_transformed,
-                                           gc.snap_mode,
-                                           marker_path.total_vertices(),
-                                           gc.linewidth);
-    curve_t            marker_path_curve(marker_path_snapped);
-
-    PathIterator path(path_obj);
-    transformed_path_t path_transformed(path, trans);
-    snap_t             path_snapped(path_transformed,
-                                    gc.snap_mode,
-                                    path.total_vertices(),
-                                    1.0);
-    curve_t            path_curve(path_snapped);
-    path_curve.rewind(0);
-
-    facepair_t face = _get_rgba_face(face_obj, gc.alpha);
-
-    //maxim's suggestions for cached scanlines
-    agg::scanline_storage_aa8 scanlines;
-    theRasterizer.reset();
-    theRasterizer.reset_clipping();
-    rendererBase.reset_clipping(true);
-
-    agg::int8u  staticFillCache[MARKER_CACHE_SIZE];
-    agg::int8u  staticStrokeCache[MARKER_CACHE_SIZE];
-    agg::int8u* fillCache = staticFillCache;
-    agg::int8u* strokeCache = staticStrokeCache;
-
-    try
-    {
-        unsigned fillSize = 0;
-        if (face.first)
-        {
-            theRasterizer.add_path(marker_path_curve);
-            agg::render_scanlines(theRasterizer, slineP8, scanlines);
-            fillSize = scanlines.byte_size();
-            if (fillSize >= MARKER_CACHE_SIZE)
-            {
-                fillCache = new agg::int8u[fillSize];
-            }
-            scanlines.serialize(fillCache);
-        }
-
-        stroke_t stroke(marker_path_curve);
-        stroke.width(gc.linewidth);
-        stroke.line_cap(gc.cap);
-        stroke.line_join(gc.join);
-        theRasterizer.reset();
-        theRasterizer.add_path(stroke);
-        agg::render_scanlines(theRasterizer, slineP8, scanlines);
-        unsigned strokeSize = scanlines.byte_size();
-        if (strokeSize >= MARKER_CACHE_SIZE)
-        {
-            strokeCache = new agg::int8u[strokeSize];
-        }
-        scanlines.serialize(strokeCache);
-
-        theRasterizer.reset_clipping();
-        rendererBase.reset_clipping(true);
-        set_clipbox(gc.cliprect, rendererBase);
-        bool has_clippath = render_clippath(gc.clippath, gc.clippath_trans);
-
-        double x, y;
-
-        agg::serialized_scanlines_adaptor_aa8 sa;
-        agg::serialized_scanlines_adaptor_aa8::embedded_scanline sl;
-
-        agg::rect_d clipping_rect(
-            -(scanlines.min_x() + 1.0),
-            -(scanlines.min_y() + 1.0),
-            width + scanlines.max_x() + 1.0,
-            height + scanlines.max_y() + 1.0);
-
-        if (has_clippath)
-        {
-            while (path_curve.vertex(&x, &y) != agg::path_cmd_stop)
-            {
-                if (MPL_notisfinite64(x) || MPL_notisfinite64(y))
-                {
-                    continue;
-                }
-
-                x = (double)(int)x;
-                y = (double)(int)y;
-
-                // Cull points outside the boundary of the image.
-                // Values that are too large may overflow and create
-                // segfaults.
-                // http://sourceforge.net/tracker/?func=detail&aid=2865490&group_id=80706&atid=560720
-                if (!clipping_rect.hit_test(x, y))
-                {
-                    continue;
-                }
-
-                pixfmt_amask_type pfa(pixFmt, alphaMask);
-                amask_ren_type r(pfa);
-                amask_aa_renderer_type ren(r);
-
-                if (face.first)
-                {
-                    ren.color(face.second);
-                    sa.init(fillCache, fillSize, x, y);
-                    agg::render_scanlines(sa, sl, ren);
-                }
-                ren.color(gc.color);
-                sa.init(strokeCache, strokeSize, x, y);
-                agg::render_scanlines(sa, sl, ren);
-            }
-        }
-        else
-        {
-            while (path_curve.vertex(&x, &y) != agg::path_cmd_stop)
-            {
-                if (MPL_notisfinite64(x) || MPL_notisfinite64(y))
-                {
-                    continue;
-                }
-
-                x = (double)(int)x;
-                y = (double)(int)y;
-
-                // Cull points outside the boundary of the image.
-                // Values that are too large may overflow and create
-                // segfaults.
-                // http://sourceforge.net/tracker/?func=detail&aid=2865490&group_id=80706&atid=560720
-                if (!clipping_rect.hit_test(x, y))
-                {
-                    continue;
-                }
-
-                if (face.first)
-                {
-                    rendererAA.color(face.second);
-                    sa.init(fillCache, fillSize, x, y);
-                    agg::render_scanlines(sa, sl, rendererAA);
-                }
-
-                rendererAA.color(gc.color);
-                sa.init(strokeCache, strokeSize, x, y);
-                agg::render_scanlines(sa, sl, rendererAA);
-            }
-        }
-    }
-    catch (...)
-    {
-        if (fillCache != staticFillCache)
-            delete[] fillCache;
-        if (strokeCache != staticStrokeCache)
-            delete[] strokeCache;
-        theRasterizer.reset_clipping();
-        rendererBase.reset_clipping(true);
-        throw;
-    }
-
-    if (fillCache != staticFillCache)
-        delete[] fillCache;
-    if (strokeCache != staticStrokeCache)
-        delete[] strokeCache;
-
-    theRasterizer.reset_clipping();
-    rendererBase.reset_clipping(true);
-
-    return Py::Object();
-}
-
 
 /**
  * This is a custom span generator that converts spans in the
@@ -881,13 +247,14 @@ public:
     }
 };
 
-
 // MGDTODO: Support clip paths
-Py::Object
-RendererAgg::draw_text_image(const Py::Tuple& args)
+void
+RendererAgg::draw_text_image(
+    const GCAgg& gc,
+    const unsigned char* buffer,
+    int width, int height,
+    int x, int y, double angle)
 {
-    _VERBOSE("RendererAgg::draw_text");
-
     typedef agg::span_allocator<agg::gray8> gray_span_alloc_type;
     typedef agg::span_allocator<agg::rgba8> color_span_alloc_type;
     typedef agg::span_interpolator_linear<> interpolator_type;
@@ -897,55 +264,6 @@ RendererAgg::draw_text_image(const Py::Tuple& args)
     typedef font_to_rgba<image_span_gen_type> span_gen_type;
     typedef agg::renderer_scanline_aa<renderer_base, color_span_alloc_type,
                                       span_gen_type> renderer_type;
-
-    args.verify_length(5);
-
-    const unsigned char* buffer = NULL;
-    int width, height;
-    Py::Object image_obj = args[0];
-
-    if (PyArray_Check(image_obj.ptr()))
-    {
-        PyObject* image_array = PyArray_FromObject(
-            image_obj.ptr(), PyArray_UBYTE, 2, 2);
-        if (!image_array)
-        {
-            throw Py::ValueError(
-                "First argument to draw_text_image must be a FT2Font.Image object or a Nx2 uint8 numpy array.");
-        }
-        image_obj = Py::Object(image_array, true);
-        buffer = (unsigned char *)PyArray_DATA(image_array);
-        width = PyArray_DIM(image_array, 1);
-        height = PyArray_DIM(image_array, 0);
-    }
-    else
-    {
-        FT2Image* image = static_cast<FT2Image *>(
-            Py::getPythonExtensionBase(image_obj.ptr()));
-        if (!image->get_buffer())
-        {
-            throw Py::ValueError(
-                "First argument to draw_text_image must be a FT2Font.Image object or a Nx2 uint8 numpy array.");
-        }
-        buffer = image->get_buffer();
-        width = image->get_width();
-        height = image->get_height();
-    }
-
-    int x(0), y(0);
-    try
-    {
-        x = Py::Int(args[1]);
-        y = Py::Int(args[2]);
-    }
-    catch (Py::TypeError)
-    {
-        throw Py::TypeError("Invalid input arguments to draw_text_image");
-    }
-
-    double angle = Py::Float(args[3]);
-
-    GCAgg gc(args[4], dpi);
 
     theRasterizer.reset_clipping();
     rendererBase.reset_clipping(true);
@@ -981,49 +299,21 @@ RendererAgg::draw_text_image(const Py::Tuple& args)
 
     theRasterizer.add_path(rect2);
     agg::render_scanlines(theRasterizer, slineP8, ri);
-
-    return Py::Object();
 }
 
-
-Py::Object
-RendererAgg::draw_image(const Py::Tuple& args)
+void
+RendererAgg::draw_image(
+    const GCAgg& gc,
+    const Image* image,
+    double x, double y, double w, double h,
+    bool has_affine, const agg::trans_affine& affine_trans)
 {
-    _VERBOSE("RendererAgg::draw_image");
-
-    args.verify_length(4, 7); // 7 if affine matrix if given
-
-    GCAgg gc(args[0], dpi);
-    Image *image = static_cast<Image*>(args[3].ptr());
-    bool has_clippath = false;
-    agg::trans_affine affine_trans;
-    bool has_affine = false;
-    double x, y, w, h;
-
-    if (args.size() == 7)
-    {
-        has_affine = true;
-        x = Py::Float(args[1]);
-        y = Py::Float(args[2]);
-        w = Py::Float(args[4]);
-        h = Py::Float(args[5]);
-        affine_trans = py_to_agg_transformation_matrix(args[6].ptr());
-    }
-    else
-    {
-        x = mpl_round(Py::Float(args[1]));
-        y = mpl_round(Py::Float(args[2]));
-        w = h = 0; /* w and h not used in this case, but assign to prevent
-                  warnings from the compiler */
-    }
-
     theRasterizer.reset_clipping();
     rendererBase.reset_clipping(true);
     set_clipbox(gc.cliprect, theRasterizer);
     has_clippath = render_clippath(gc.clippath, gc.clippath_trans);
 
-    Py::Tuple empty;
-    image->flipud_out(empty);
+    image->flipud_out();
     pixfmt pixf(*(image->rbufOut));
 
     if (has_affine | has_clippath)
@@ -1112,15 +402,14 @@ RendererAgg::draw_image(const Py::Tuple& args)
     }
 
     rendererBase.reset_clipping(true);
-    image->flipud_out(empty);
-
-    return Py::Object();
+    image->flipud_out();
 }
 
 
 template<class path_t>
-void RendererAgg::_draw_path(path_t& path, bool has_clippath,
-                             const facepair_t& face, const GCAgg& gc)
+void RendererAgg::_draw_path(
+    path_t& path, bool has_clippath,
+    const facepair_t& face, const GCAgg& gc)
 {
     typedef agg::conv_stroke<path_t>                           stroke_t;
     typedef agg::conv_dash<path_t>                             dash_t;
@@ -1296,9 +585,13 @@ void RendererAgg::_draw_path(path_t& path, bool has_clippath,
     }
 }
 
-
-Py::Object
-RendererAgg::draw_path(const Py::Tuple& args)
+template<class PathIterator>
+void
+RendererAgg::draw_path(
+    const GCAgg& gc,
+    PathIterator& path,
+    const agg::trans_affine& trans,
+    const facepair_t& face)
 {
     typedef agg::conv_transform<PathIterator>  transformed_path_t;
     typedef PathNanRemover<transformed_path_t> nan_removed_t;
@@ -1306,18 +599,6 @@ RendererAgg::draw_path(const Py::Tuple& args)
     typedef PathSnapper<clipped_t>             snapped_t;
     typedef PathSimplifier<snapped_t>          simplify_t;
     typedef agg::conv_curve<simplify_t>        curve_t;
-
-    _VERBOSE("RendererAgg::draw_path");
-    args.verify_length(3, 4);
-
-    GCAgg gc(args[0], dpi);
-    PathIterator path(args[1]);
-    agg::trans_affine trans = py_to_agg_transformation_matrix(args[2].ptr());
-    Py::Object face_obj;
-    if (args.size() == 4)
-        face_obj = args[3];
-
-    facepair_t face = _get_rgba_face(face_obj, gc.alpha);
 
     theRasterizer.reset_clipping();
     rendererBase.reset_clipping(true);
@@ -1336,36 +617,29 @@ RendererAgg::draw_path(const Py::Tuple& args)
     simplify_t         simplified(snapped, simplify, path.simplify_threshold());
     curve_t            curve(simplified);
 
-    try
-    {
-        _draw_path(curve, has_clippath, face, gc);
-    }
-    catch (const char* e)
-    {
-        throw Py::RuntimeError(e);
-    }
-
-    return Py::Object();
+    _draw_path(curve, has_clippath, face, gc);
 }
 
 
-template<class PathGenerator, int check_snap, int has_curves>
+template<class PathIterator, class PathGenerator, int check_snap, int has_curves>
 Py::Object
-RendererAgg::_draw_path_collection_generic
-(GCAgg&                         gc,
- agg::trans_affine              master_transform,
- const Py::Object&              cliprect,
- const Py::Object&              clippath,
- const agg::trans_affine&       clippath_trans,
- const PathGenerator&           path_generator,
- const Py::SeqBase<Py::Object>& transforms_obj,
- const Py::Object&              offsets_obj,
- const agg::trans_affine&       offset_trans,
- const Py::Object&              facecolors_obj,
- const Py::Object&              edgecolors_obj,
- const Py::SeqBase<Py::Float>&  linewidths,
- const Py::SeqBase<Py::Object>& linestyles_obj,
- const Py::SeqBase<Py::Int>&    antialiaseds)
+RendererAgg::_draw_path_collection_generic(
+    const GCAgg&                   gc,
+    const agg::trans_affine&       master_transform,
+    bool                           has_cliprect,
+    const agg::rect_d&             cliprect,
+    bool                           has_clippath,
+    PathIterator&                  clippath,
+    const agg::trans_affine&       clippath_trans,
+    const PathGenerator&           path_generator,
+    const Py::SeqBase<Py::Object>& transforms_obj,
+    const Py::Object&              offsets_obj,
+    const agg::trans_affine&       offset_trans,
+    const Py::Object&              facecolors_obj,
+    const Py::Object&              edgecolors_obj,
+    const Py::SeqBase<Py::Float>&  linewidths,
+    const Py::SeqBase<Py::Object>& linestyles_obj,
+    const Py::SeqBase<Py::Int>&    antialiaseds)
 {
     typedef agg::conv_transform<typename PathGenerator::path_iterator> transformed_path_t;
     typedef PathNanRemover<transformed_path_t>                         nan_removed_t;
@@ -2321,15 +1595,6 @@ RendererAgg::buffer_get( Py_buffer* buf, int flags )
 }
 #endif
 
-RendererAgg::~RendererAgg()
-{
-
-    _VERBOSE("RendererAgg::~RendererAgg");
-
-    delete [] alphaBuffer;
-    delete [] pixBuffer;
-}
-
 /* ------------ module methods ------------- */
 Py::Object _backend_agg_module::new_renderer(const Py::Tuple &args,
         const Py::Dict &kws)
@@ -2444,26 +1709,5 @@ void RendererAgg::init_type()
 
     #if PY3K
     behaviors().supportBufferType();
-    #endif
-}
-
-PyMODINIT_FUNC
-#if PY3K
-PyInit__backend_agg(void)
-#else
-init_backend_agg(void)
-#endif
-{
-    //static _backend_agg_module* _backend_agg = new _backend_agg_module;
-
-    _VERBOSE("init_backend_agg");
-
-    import_array();
-
-    static _backend_agg_module* _backend_agg = NULL;
-    _backend_agg = new _backend_agg_module;
-
-    #if PY3K
-    return _backend_agg->module().ptr();
     #endif
 }

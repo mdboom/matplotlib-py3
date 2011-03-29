@@ -26,7 +26,7 @@ public:
                            "read_png_float(fileobj)");
         add_varargs_method("read_png_uint8", &_png_module::read_png_uint8,
                            "read_png_uint8(fileobj)");
-        initialize("Module to write PNG files");
+        initialize("Module to read and write PNG files");
     }
 
     virtual ~_png_module() {}

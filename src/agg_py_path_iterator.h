@@ -20,6 +20,7 @@
 
     unsigned vertex(double* x, double* y)
  */
+/* TODO: Rename to PyPathIterator */
 class PathIterator
 {
     /* We hold references to the Python objects, not just the
@@ -40,9 +41,15 @@ class PathIterator
 
 public:
     /* path_obj is an instance of the class Path as defined in path.py */
+    inline PathIterator() :
+        m_iterator(0),
+        m_total_vertices(0),
+        m_should_simplify(false),
+    {}
+
     inline PathIterator(const Py::Object& path_obj) :
-            m_vertices(), m_codes(), m_iterator(0), m_should_simplify(false),
-            m_simplify_threshold(1.0 / 9.0)
+        m_vertices(), m_codes(), m_iterator(0), m_should_simplify(false),
+        m_simplify_threshold(1.0 / 9.0)
     {
         Py::Object vertices_obj           = path_obj.getAttr("vertices");
         Py::Object codes_obj              = path_obj.getAttr("codes");
@@ -130,6 +137,11 @@ public:
     inline bool has_curves()
     {
         return !m_codes.isNone();
+    }
+
+    inline void* id()
+    {
+        return (void *)m_vertices.ptr();
     }
 };
 

@@ -98,3 +98,9 @@ py_convert_bbox(PyObject* bbox_obj, double& l, double& b, double& r, double& t)
 
     return false;
 }
+
+bool
+py_convert_bbox(PyObject* bbox_obj, agg::rect_d& r)
+{
+    return py_convert_bbox(bbox_obj, &r.x1, &r.y1, &r.x2, &r.y2);
+}

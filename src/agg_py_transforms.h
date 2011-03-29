@@ -14,4 +14,7 @@ py_to_agg_transformation_matrix(PyObject* obj, bool errors = true);
 bool
 py_convert_bbox(PyObject* bbox_obj, double& l, double& b, double& r, double& t);
 
+bool
+py_convert_bbox(PyObject* bbox_obj, agg::rect_d& r);
+
 #endif // __AGG_PY_TRANSFORMS_H__
