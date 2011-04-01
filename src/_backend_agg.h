@@ -156,6 +156,7 @@ class RendererAgg
 {
 public:
     typedef std::pair<bool, agg::rgba> facepair_t;
+    typedef std::vector<agg::trans_affine> transforms_vector_t;
 
     RendererAgg(unsigned int width, unsigned int height, double dpi, int debug);
 
@@ -265,8 +266,8 @@ protected:
         const PathIterator& clippath,
         const agg::trans_affine& clippath_trans);
 
-    template<class PathIteratorType>
-    void _draw_path(PathIteratorType& path, bool has_clippath,
+    template<class PathIterator>
+    void _draw_path(PathIterator& path, bool has_clippath,
                     const facepair_t& face, const GCAgg& gc);
 
     template<class PathGenerator, int check_snap, int has_curves>
@@ -571,6 +572,185 @@ RendererAgg::draw_path(
     curve_t            curve(simplified);
 
     _draw_path(curve, has_clippath, face, gc);
+}
+
+template<class path_t>
+void RendererAgg::_draw_path(
+    path_t& path, bool has_clippath,
+    const facepair_t& face, const GCAgg& gc)
+{
+    typedef agg::conv_stroke<path_t>                           stroke_t;
+    typedef agg::conv_dash<path_t>                             dash_t;
+    typedef agg::conv_stroke<dash_t>                           stroke_dash_t;
+    typedef agg::pixfmt_amask_adaptor<pixfmt, alpha_mask_type> pixfmt_amask_type;
+    typedef agg::renderer_base<pixfmt_amask_type>              amask_ren_type;
+    typedef agg::renderer_scanline_aa_solid<amask_ren_type>    amask_aa_renderer_type;
+    typedef agg::renderer_scanline_bin_solid<amask_ren_type>   amask_bin_renderer_type;
+
+    // Render face
+    if (face.first)
+    {
+        theRasterizer.add_path(path);
+
+        if (gc.isaa)
+        {
+            if (has_clippath)
+            {
+                pixfmt_amask_type pfa(pixFmt, alphaMask);
+                amask_ren_type r(pfa);
+                amask_aa_renderer_type ren(r);
+                ren.color(face.second);
+                agg::render_scanlines(theRasterizer, slineP8, ren);
+            }
+            else
+            {
+                rendererAA.color(face.second);
+                agg::render_scanlines(theRasterizer, slineP8, rendererAA);
+            }
+        }
+        else
+        {
+            if (has_clippath)
+            {
+                pixfmt_amask_type pfa(pixFmt, alphaMask);
+                amask_ren_type r(pfa);
+                amask_bin_renderer_type ren(r);
+                ren.color(face.second);
+                agg::render_scanlines(theRasterizer, slineP8, ren);
+            }
+            else
+            {
+                rendererBin.color(face.second);
+                agg::render_scanlines(theRasterizer, slineP8, rendererBin);
+            }
+        }
+    }
+
+    // Render hatch
+    if (!gc.hatchpath.isNone())
+    {
+        // Reset any clipping that may be in effect, since we'll be
+        // drawing the hatch in a scratch buffer at origin (0, 0)
+        theRasterizer.reset_clipping();
+        rendererBase.reset_clipping(true);
+
+        // Create and transform the path
+        typedef agg::conv_transform<PathIterator> hatch_path_trans_t;
+        typedef agg::conv_curve<hatch_path_trans_t> hatch_path_curve_t;
+        typedef agg::conv_stroke<hatch_path_curve_t> hatch_path_stroke_t;
+
+        PathIterator hatch_path(gc.hatchpath);
+        agg::trans_affine hatch_trans;
+        hatch_trans *= agg::trans_affine_scaling(1.0, -1.0);
+        hatch_trans *= agg::trans_affine_translation(0.0, 1.0);
+        hatch_trans *= agg::trans_affine_scaling(HATCH_SIZE, HATCH_SIZE);
+        hatch_path_trans_t hatch_path_trans(hatch_path, hatch_trans);
+        hatch_path_curve_t hatch_path_curve(hatch_path_trans);
+        hatch_path_stroke_t hatch_path_stroke(hatch_path_curve);
+        hatch_path_stroke.width(1.0);
+        hatch_path_stroke.line_cap(agg::square_cap);
+
+        // Render the path into the hatch buffer
+        pixfmt hatch_img_pixf(hatchRenderingBuffer);
+        renderer_base rb(hatch_img_pixf);
+        renderer_aa rs(rb);
+        rb.clear(agg::rgba(0.0, 0.0, 0.0, 0.0));
+        rs.color(gc.color);
+
+        theRasterizer.add_path(hatch_path_curve);
+        agg::render_scanlines(theRasterizer, slineP8, rs);
+        theRasterizer.add_path(hatch_path_stroke);
+        agg::render_scanlines(theRasterizer, slineP8, rs);
+
+        // Put clipping back on, if originally set on entry to this
+        // function
+        set_clipbox(gc.cliprect, theRasterizer);
+        if (has_clippath)
+            render_clippath(gc.clippath, gc.clippath_trans);
+
+        // Transfer the hatch to the main image buffer
+        typedef agg::image_accessor_wrap < pixfmt,
+        agg::wrap_mode_repeat_auto_pow2,
+        agg::wrap_mode_repeat_auto_pow2 > img_source_type;
+        typedef agg::span_pattern_rgba<img_source_type> span_gen_type;
+        agg::span_allocator<agg::rgba8> sa;
+        img_source_type img_src(hatch_img_pixf);
+        span_gen_type sg(img_src, 0, 0);
+        theRasterizer.add_path(path);
+        agg::render_scanlines_aa(theRasterizer, slineP8, rendererBase, sa, sg);
+    }
+
+    // Render stroke
+    if (gc.linewidth != 0.0)
+    {
+        double linewidth = gc.linewidth;
+        if (!gc.isaa)
+        {
+            linewidth = (linewidth < 0.5) ? 0.5 : mpl_round(linewidth);
+        }
+        if (gc.dashes.size() == 0)
+        {
+            stroke_t stroke(path);
+            stroke.width(linewidth);
+            stroke.line_cap(gc.cap);
+            stroke.line_join(gc.join);
+            theRasterizer.add_path(stroke);
+        }
+        else
+        {
+            dash_t dash(path);
+            for (GCAgg::dash_t::const_iterator i = gc.dashes.begin();
+                    i != gc.dashes.end(); ++i)
+            {
+                double val0 = i->first;
+                double val1 = i->second;
+                if (!gc.isaa)
+                {
+                    val0 = (int)val0 + 0.5;
+                    val1 = (int)val1 + 0.5;
+                }
+                dash.add_dash(val0, val1);
+            }
+            stroke_dash_t stroke(dash);
+            stroke.line_cap(gc.cap);
+            stroke.line_join(gc.join);
+            stroke.width(linewidth);
+            theRasterizer.add_path(stroke);
+        }
+
+        if (gc.isaa)
+        {
+            if (has_clippath)
+            {
+                pixfmt_amask_type pfa(pixFmt, alphaMask);
+                amask_ren_type r(pfa);
+                amask_aa_renderer_type ren(r);
+                ren.color(gc.color);
+                agg::render_scanlines(theRasterizer, slineP8, ren);
+            }
+            else
+            {
+                rendererAA.color(gc.color);
+                agg::render_scanlines(theRasterizer, slineP8, rendererAA);
+            }
+        }
+        else
+        {
+            if (has_clippath)
+            {
+                pixfmt_amask_type pfa(pixFmt, alphaMask);
+                amask_ren_type r(pfa);
+                amask_bin_renderer_type ren(r);
+                ren.color(gc.color);
+                agg::render_scanlines(theRasterizer, slineP8, ren);
+            }
+            else
+            {
+                rendererBin.color(gc.color);
+                agg::render_scanlines(theRasterizer, slineBin, rendererBin);
+            }
+        }
+    }
 }
 
 #endif

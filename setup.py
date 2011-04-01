@@ -24,6 +24,7 @@ rc = {'backend':'Agg'}
 # update it when the contents of directories change.
 import os
 if os.path.exists('MANIFEST'): os.remove('MANIFEST')
+import glob
 
 import sys
 major, minor1, minor2, s, tmp = sys.version_info
@@ -31,12 +32,12 @@ major, minor1, minor2, s, tmp = sys.version_info
 if major==2 and minor1<4 or major<2:
     raise SystemExit("""matplotlib requires Python 2.4 or later.""")
 
-import glob
 from distutils.core import setup
 try:
     from distutils.command.build_py import build_py_2to3 as build_py
 except ImportError:
     from distutils.command.build_py import build_py
+
 from setupext import build_agg, build_gtkagg, build_tkagg,\
      build_macosx, build_ft2font, build_image, build_windowing, build_path, \
      build_contour, build_delaunay, build_gdk, \

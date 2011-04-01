@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 
 import os, base64, tempfile, urllib, gzip, io
+from xml.etree import ElementTree
 
 import numpy as np
 
@@ -40,7 +41,6 @@ def new_figure_manager(num, *args, **kwargs):
     canvas  = FigureCanvasSVG(thisFig)
     manager = FigureManagerSVG(canvas, num)
     return manager
-
 
 _capstyle_d = {'projecting' : 'square', 'butt' : 'butt', 'round': 'round',}
 class RendererSVG(RendererBase):

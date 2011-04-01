@@ -406,185 +406,6 @@ RendererAgg::draw_image(
 }
 
 
-template<class path_t>
-void RendererAgg::_draw_path(
-    path_t& path, bool has_clippath,
-    const facepair_t& face, const GCAgg& gc)
-{
-    typedef agg::conv_stroke<path_t>                           stroke_t;
-    typedef agg::conv_dash<path_t>                             dash_t;
-    typedef agg::conv_stroke<dash_t>                           stroke_dash_t;
-    typedef agg::pixfmt_amask_adaptor<pixfmt, alpha_mask_type> pixfmt_amask_type;
-    typedef agg::renderer_base<pixfmt_amask_type>              amask_ren_type;
-    typedef agg::renderer_scanline_aa_solid<amask_ren_type>    amask_aa_renderer_type;
-    typedef agg::renderer_scanline_bin_solid<amask_ren_type>   amask_bin_renderer_type;
-
-    // Render face
-    if (face.first)
-    {
-        theRasterizer.add_path(path);
-
-        if (gc.isaa)
-        {
-            if (has_clippath)
-            {
-                pixfmt_amask_type pfa(pixFmt, alphaMask);
-                amask_ren_type r(pfa);
-                amask_aa_renderer_type ren(r);
-                ren.color(face.second);
-                agg::render_scanlines(theRasterizer, slineP8, ren);
-            }
-            else
-            {
-                rendererAA.color(face.second);
-                agg::render_scanlines(theRasterizer, slineP8, rendererAA);
-            }
-        }
-        else
-        {
-            if (has_clippath)
-            {
-                pixfmt_amask_type pfa(pixFmt, alphaMask);
-                amask_ren_type r(pfa);
-                amask_bin_renderer_type ren(r);
-                ren.color(face.second);
-                agg::render_scanlines(theRasterizer, slineP8, ren);
-            }
-            else
-            {
-                rendererBin.color(face.second);
-                agg::render_scanlines(theRasterizer, slineP8, rendererBin);
-            }
-        }
-    }
-
-    // Render hatch
-    if (!gc.hatchpath.isNone())
-    {
-        // Reset any clipping that may be in effect, since we'll be
-        // drawing the hatch in a scratch buffer at origin (0, 0)
-        theRasterizer.reset_clipping();
-        rendererBase.reset_clipping(true);
-
-        // Create and transform the path
-        typedef agg::conv_transform<PathIterator> hatch_path_trans_t;
-        typedef agg::conv_curve<hatch_path_trans_t> hatch_path_curve_t;
-        typedef agg::conv_stroke<hatch_path_curve_t> hatch_path_stroke_t;
-
-        PathIterator hatch_path(gc.hatchpath);
-        agg::trans_affine hatch_trans;
-        hatch_trans *= agg::trans_affine_scaling(1.0, -1.0);
-        hatch_trans *= agg::trans_affine_translation(0.0, 1.0);
-        hatch_trans *= agg::trans_affine_scaling(HATCH_SIZE, HATCH_SIZE);
-        hatch_path_trans_t hatch_path_trans(hatch_path, hatch_trans);
-        hatch_path_curve_t hatch_path_curve(hatch_path_trans);
-        hatch_path_stroke_t hatch_path_stroke(hatch_path_curve);
-        hatch_path_stroke.width(1.0);
-        hatch_path_stroke.line_cap(agg::square_cap);
-
-        // Render the path into the hatch buffer
-        pixfmt hatch_img_pixf(hatchRenderingBuffer);
-        renderer_base rb(hatch_img_pixf);
-        renderer_aa rs(rb);
-        rb.clear(agg::rgba(0.0, 0.0, 0.0, 0.0));
-        rs.color(gc.color);
-
-        theRasterizer.add_path(hatch_path_curve);
-        agg::render_scanlines(theRasterizer, slineP8, rs);
-        theRasterizer.add_path(hatch_path_stroke);
-        agg::render_scanlines(theRasterizer, slineP8, rs);
-
-        // Put clipping back on, if originally set on entry to this
-        // function
-        set_clipbox(gc.cliprect, theRasterizer);
-        if (has_clippath)
-            render_clippath(gc.clippath, gc.clippath_trans);
-
-        // Transfer the hatch to the main image buffer
-        typedef agg::image_accessor_wrap < pixfmt,
-        agg::wrap_mode_repeat_auto_pow2,
-        agg::wrap_mode_repeat_auto_pow2 > img_source_type;
-        typedef agg::span_pattern_rgba<img_source_type> span_gen_type;
-        agg::span_allocator<agg::rgba8> sa;
-        img_source_type img_src(hatch_img_pixf);
-        span_gen_type sg(img_src, 0, 0);
-        theRasterizer.add_path(path);
-        agg::render_scanlines_aa(theRasterizer, slineP8, rendererBase, sa, sg);
-    }
-
-    // Render stroke
-    if (gc.linewidth != 0.0)
-    {
-        double linewidth = gc.linewidth;
-        if (!gc.isaa)
-        {
-            linewidth = (linewidth < 0.5) ? 0.5 : mpl_round(linewidth);
-        }
-        if (gc.dashes.size() == 0)
-        {
-            stroke_t stroke(path);
-            stroke.width(linewidth);
-            stroke.line_cap(gc.cap);
-            stroke.line_join(gc.join);
-            theRasterizer.add_path(stroke);
-        }
-        else
-        {
-            dash_t dash(path);
-            for (GCAgg::dash_t::const_iterator i = gc.dashes.begin();
-                    i != gc.dashes.end(); ++i)
-            {
-                double val0 = i->first;
-                double val1 = i->second;
-                if (!gc.isaa)
-                {
-                    val0 = (int)val0 + 0.5;
-                    val1 = (int)val1 + 0.5;
-                }
-                dash.add_dash(val0, val1);
-            }
-            stroke_dash_t stroke(dash);
-            stroke.line_cap(gc.cap);
-            stroke.line_join(gc.join);
-            stroke.width(linewidth);
-            theRasterizer.add_path(stroke);
-        }
-
-        if (gc.isaa)
-        {
-            if (has_clippath)
-            {
-                pixfmt_amask_type pfa(pixFmt, alphaMask);
-                amask_ren_type r(pfa);
-                amask_aa_renderer_type ren(r);
-                ren.color(gc.color);
-                agg::render_scanlines(theRasterizer, slineP8, ren);
-            }
-            else
-            {
-                rendererAA.color(gc.color);
-                agg::render_scanlines(theRasterizer, slineP8, rendererAA);
-            }
-        }
-        else
-        {
-            if (has_clippath)
-            {
-                pixfmt_amask_type pfa(pixFmt, alphaMask);
-                amask_ren_type r(pfa);
-                amask_bin_renderer_type ren(r);
-                ren.color(gc.color);
-                agg::render_scanlines(theRasterizer, slineP8, ren);
-            }
-            else
-            {
-                rendererBin.color(gc.color);
-                agg::render_scanlines(theRasterizer, slineBin, rendererBin);
-            }
-        }
-    }
-}
-
 template<class PathIterator>
 void
 RendererAgg::draw_path(
@@ -621,25 +442,33 @@ RendererAgg::draw_path(
 }
 
 
-template<class PathIterator, class PathGenerator, int check_snap, int has_curves>
-Py::Object
+template<class PathIterator,
+         class PathGenerator,
+         class OffsetsArray,
+         class FaceColorsArray,
+         class EdgeColorsArray,
+         class LineWidthsArray,
+         class LineStylesArray,
+         class AntialiasedsArray,
+         int check_snap,
+         int has_curves>
+void
 RendererAgg::_draw_path_collection_generic(
     const GCAgg&                   gc,
-    const agg::trans_affine&       master_transform,
     bool                           has_cliprect,
     const agg::rect_d&             cliprect,
     bool                           has_clippath,
     PathIterator&                  clippath,
     const agg::trans_affine&       clippath_trans,
     const PathGenerator&           path_generator,
-    const Py::SeqBase<Py::Object>& transforms_obj,
-    const Py::Object&              offsets_obj,
+    const transforms_vector_t&     transforms,
+    const OffsetsArray&            offsets,
     const agg::trans_affine&       offset_trans,
-    const Py::Object&              facecolors_obj,
-    const Py::Object&              edgecolors_obj,
-    const Py::SeqBase<Py::Float>&  linewidths,
-    const Py::SeqBase<Py::Object>& linestyles_obj,
-    const Py::SeqBase<Py::Int>&    antialiaseds)
+    const FaceColorsArray&         facecolors,
+    const EdgeColorsArray&         edgecolors,
+    const LineWidthsArray&         linewidths,
+    const LineStylesArray&         linestyles,
+    const AntialiasedsArray&       antialiaseds)
 {
     typedef agg::conv_transform<typename PathGenerator::path_iterator> transformed_path_t;
     typedef PathNanRemover<transformed_path_t>                         nan_removed_t;
@@ -648,80 +477,22 @@ RendererAgg::_draw_path_collection_generic(
     typedef agg::conv_curve<snapped_t>                                 snapped_curve_t;
     typedef agg::conv_curve<clipped_t>                                 curve_t;
 
-    PyArrayObject* offsets = (PyArrayObject*)PyArray_FromObject
-        (offsets_obj.ptr(), PyArray_DOUBLE, 0, 2);
-    if (!offsets ||
-        (PyArray_NDIM(offsets) == 2 && PyArray_DIM(offsets, 1) != 2) ||
-        (PyArray_NDIM(offsets) == 1 && PyArray_DIM(offsets, 0) != 0))
-    {
-        Py_XDECREF(offsets);
-        throw Py::ValueError("Offsets array must be Nx2");
-    }
-    Py::Object offsets_arr_obj((PyObject*)offsets, true);
-
-    PyArrayObject* facecolors = (PyArrayObject*)PyArray_FromObject
-        (facecolors_obj.ptr(), PyArray_DOUBLE, 1, 2);
-    if (!facecolors ||
-        (PyArray_NDIM(facecolors) == 1 && PyArray_DIM(facecolors, 0) != 0) ||
-        (PyArray_NDIM(facecolors) == 2 && PyArray_DIM(facecolors, 1) != 4))
-    {
-        Py_XDECREF(facecolors);
-        throw Py::ValueError("Facecolors must be a Nx4 numpy array or empty");
-    }
-    Py::Object facecolors_arr_obj((PyObject*)facecolors, true);
-
-    PyArrayObject* edgecolors = (PyArrayObject*)PyArray_FromObject
-        (edgecolors_obj.ptr(), PyArray_DOUBLE, 1, 2);
-    if (!edgecolors ||
-        (PyArray_NDIM(edgecolors) == 1 && PyArray_DIM(edgecolors, 0) != 0) ||
-        (PyArray_NDIM(edgecolors) == 2 && PyArray_DIM(edgecolors, 1) != 4))
-    {
-        Py_XDECREF(edgecolors);
-        throw Py::ValueError("Edgecolors must be a Nx4 numpy array");
-    }
-    Py::Object edgecolors_arr_obj((PyObject*)edgecolors, true);
-
     size_t Npaths      = path_generator.num_paths();
-    size_t Noffsets    = offsets->dimensions[0];
+    size_t Noffsets    = offsets.size();
     size_t N           = std::max(Npaths, Noffsets);
-    size_t Ntransforms = std::min(transforms_obj.length(), N);
-    size_t Nfacecolors = facecolors->dimensions[0];
-    size_t Nedgecolors = edgecolors->dimensions[0];
-    size_t Nlinewidths = linewidths.length();
-    size_t Nlinestyles = std::min(linestyles_obj.length(), N);
-    size_t Naa         = antialiaseds.length();
+    size_t Ntransforms = std::min(transforms.size(), N);
+    size_t Nfacecolors = facecolors.size();
+    size_t Nedgecolors = edgecolors.size();
+    size_t Nlinewidths = linewidths.size();
+    size_t Nlinestyles = std::min(linestyles.size(), N);
+    size_t Naa         = antialiaseds.size();
 
     if ((Nfacecolors == 0 && Nedgecolors == 0) || Npaths == 0)
     {
-        return Py::Object();
+        return;
     }
 
     size_t i = 0;
-
-    // Convert all of the transforms up front
-    typedef std::vector<agg::trans_affine> transforms_t;
-    transforms_t transforms;
-    transforms.reserve(Ntransforms);
-    for (i = 0; i < Ntransforms; ++i)
-    {
-        agg::trans_affine trans = py_to_agg_transformation_matrix
-            (transforms_obj[i].ptr(), false);
-        trans *= master_transform;
-
-        transforms.push_back(trans);
-    }
-
-    // Convert all the dashes up front
-    typedef std::vector<std::pair<double, GCAgg::dash_t> > dashes_t;
-    dashes_t dashes;
-    dashes.resize(Nlinestyles);
-    i = 0;
-    for (dashes_t::iterator d = dashes.begin();
-         d != dashes.end(); ++d, ++i)
-    {
-        convert_dashes(Py::Tuple(linestyles_obj[i]), dpi, d->second,
-                       d->first);
-    }
 
     // Handle any clipping globally
     theRasterizer.reset_clipping();
@@ -739,19 +510,12 @@ RendererAgg::_draw_path_collection_generic(
     {
         typename PathGenerator::path_iterator path = path_generator(i);
 
-        if (Ntransforms)
-        {
-            trans = transforms[i % Ntransforms];
-        }
-        else
-        {
-            trans = master_transform;
-        }
+        trans = transforms[i % Ntransforms];
 
         if (Noffsets)
         {
-            double xo = *(double*)PyArray_GETPTR2(offsets, i % Noffsets, 0);
-            double yo = *(double*)PyArray_GETPTR2(offsets, i % Noffsets, 1);
+            double xo, yo;
+            offsets.get(i % Noffsets, &xo, &yo);
             offset_trans.transform(&xo, &yo);
             trans *= agg::trans_affine_translation(xo, yo);
         }
@@ -762,26 +526,16 @@ RendererAgg::_draw_path_collection_generic(
 
         if (Nfacecolors)
         {
-            size_t fi = i % Nfacecolors;
-            face.second = agg::rgba(
-                *(double*)PyArray_GETPTR2(facecolors, fi, 0),
-                *(double*)PyArray_GETPTR2(facecolors, fi, 1),
-                *(double*)PyArray_GETPTR2(facecolors, fi, 2),
-                *(double*)PyArray_GETPTR2(facecolors, fi, 3));
+            facecolors.get(i % Nfacecolors, &face.second);
         }
 
         if (Nedgecolors)
         {
-            size_t ei = i % Nedgecolors;
-            gc.color = agg::rgba(
-                *(double*)PyArray_GETPTR2(edgecolors, ei, 0),
-                *(double*)PyArray_GETPTR2(edgecolors, ei, 1),
-                *(double*)PyArray_GETPTR2(edgecolors, ei, 2),
-                *(double*)PyArray_GETPTR2(edgecolors, ei, 3));
+            edgecolors.get(i % Nedgecolors, &gc.color);
 
             if (Nlinewidths)
             {
-                gc.linewidth = double(Py::Float(linewidths[i % Nlinewidths])) * dpi / 72.0;
+                gc.linewidth = linewidths.get(i % Nlinewidths) * dpi / 72.0;
             }
             else
             {
@@ -789,8 +543,7 @@ RendererAgg::_draw_path_collection_generic(
             }
             if (Nlinestyles)
             {
-                gc.dashes = dashes[i % Nlinestyles].second;
-                gc.dashOffset = dashes[i % Nlinestyles].first;
+                linestyles.get(i % Nlinestyles, &gc.dashes, &gc.dashOffset);
             }
         }
 
@@ -833,10 +586,7 @@ RendererAgg::_draw_path_collection_generic(
             }
         }
     }
-
-    return Py::Object();
 }
-
 
 class PathListGenerator
 {
