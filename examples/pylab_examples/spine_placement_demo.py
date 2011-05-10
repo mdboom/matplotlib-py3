@@ -15,7 +15,7 @@ for loc, spine in ax.spines.items():
     elif loc in ['right','top']:
         spine.set_color('none') # don't draw spine
     else:
-        raise ValueError('unknown spine location: %s'%loc)
+        raise ValueError('unknown spine location: {}'.format(loc))
 
 # turn off ticks where there is no spine
 ax.xaxis.set_ticks_position('bottom')

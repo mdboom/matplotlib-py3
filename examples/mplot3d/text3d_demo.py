@@ -10,7 +10,7 @@ ys = (6, 4, 8, 7, 2, 2)
 zs = (4, 2, 5, 6, 1, 7)
 
 for zdir, x, y, z in zip(zdirs, xs, ys, zs):
-    label = '(%d, %d, %d), dir=%s' % (x, y, z, zdir)
+    label = '({:d}, {:d}, {:d}), dir={}'.format(x, y, z, zdir)
     ax.text(x, y, z, label, zdir)
 
 ax.text(1, 1, 1, "red", color='red')

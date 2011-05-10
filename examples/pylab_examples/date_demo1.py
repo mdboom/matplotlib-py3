@@ -44,7 +44,7 @@ ax.xaxis.set_minor_locator(months)
 ax.autoscale_view()
 
 # format the coords message box
-def price(x): return '$%1.2f'%x
+def price(x): return '${:1.2f}'.format(x)
 ax.fmt_xdata = DateFormatter('%Y-%m-%d')
 ax.fmt_ydata = price
 ax.grid(True)

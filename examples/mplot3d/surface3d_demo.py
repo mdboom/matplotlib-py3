@@ -1,6 +1,6 @@
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
-from matplotlib.ticker import LinearLocator, FixedLocator, FormatStrFormatter
+from matplotlib.ticker import LinearLocator, FixedLocator, NewFormatStrFormatter
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -16,7 +16,7 @@ surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.jet,
 ax.set_zlim3d(-1.01, 1.01)
 
 ax.w_zaxis.set_major_locator(LinearLocator(10))
-ax.w_zaxis.set_major_formatter(FormatStrFormatter('%.03f'))
+ax.w_zaxis.set_major_formatter(NewFormatStrFormatter('{:.03f}'))
 
 fig.colorbar(surf, shrink=0.5, aspect=5)
 

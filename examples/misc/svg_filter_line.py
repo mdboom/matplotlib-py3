@@ -82,5 +82,5 @@ for l in [l1, l2]:
     shadow.set("filter",'url(#dropshadow)')
 
 fn = "svg_filter_line.svg"
-print("Saving '%s'" % fn)
+print("Saving '{}'".format(fn))
 ET.ElementTree(tree).write(fn)

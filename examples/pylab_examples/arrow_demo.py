@@ -199,7 +199,7 @@ def make_arrow_plot(data, size=4, display='length', shape='right', \
         elif where == 'center':
             orig_position = array([[length/2.0, 3*max_arrow_width]])
         else:
-            raise ValueError("Got unknown position parameter %s" % where)
+            raise ValueError("Got unknown position parameter {}".format(where))
 
 
 
@@ -207,7 +207,8 @@ def make_arrow_plot(data, size=4, display='length', shape='right', \
         coords = dot(orig_position, M) + [[x_pos, y_pos]]
         x, y = ravel(coords)
         orig_label = rate_labels[pair]
-        label = '$%s_{_{\mathrm{%s}}}$' % (orig_label[0], orig_label[1:])
+        # { is escaped from .format() by doubling {{
+        label = r'${0}_{{_{{\mathrm{{{1}}}}}}}$'.format(orig_label[0], orig_label[1:])
 
         text(x, y, label, size=label_text_size, ha='center', va='center', \
             color=labelcolor or fc)

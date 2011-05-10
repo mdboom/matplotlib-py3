@@ -7,7 +7,7 @@ import matplotlib.cbook as cbook
 w, h = 512, 512
 
 datafile = cbook.get_sample_data('ct.raw', asfileobj=False)
-print ('loading %s' % datafile)
+print ('loading {}'.format(datafile))
 s = open(datafile, 'rb').read()
 A = fromstring(s, uint16).astype(float)
 A *= 1.0/max(A)

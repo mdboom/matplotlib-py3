@@ -16,7 +16,7 @@ import matplotlib.cbook as cbook
 if 1:   # load the data
     # data are 256x256 16 bit integers
     dfile = cbook.get_sample_data('s1045.ima', asfileobj=False)
-    print ('loading image %s' % dfile)
+    print ('loading image {}'.format(dfile))
     im = np.fromstring(open(dfile, 'rb').read(), np.uint16).astype(float)
     im.shape = 256, 256
 
@@ -41,7 +41,7 @@ if 1:   # plot the EEG
 
     numSamples, numRows = 800,4
     eegfile = cbook.get_sample_data('eeg.dat', asfileobj=False)
-    print ('loading eeg %s' % eegfile)
+    print ('loading eeg {}'.format(eegfile))
     data = np.fromstring(open(eegfile, 'rb').read(), float)
     data.shape = numSamples, numRows
     t = 10.0 * np.arange(numSamples, dtype=float)/numSamples

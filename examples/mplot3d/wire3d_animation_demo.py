@@ -35,4 +35,4 @@ for phi in np.linspace(0, 360 / 2 / np.pi, 100):
 
     plt.draw()
 
-print ('FPS: %f' % (100 / (time.time() - tstart)))
+print ('FPS: {:f}'.format(100 / (time.time() - tstart)))

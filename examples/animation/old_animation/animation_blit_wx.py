@@ -60,11 +60,11 @@ def update_line(*args):
     if update_line.cnt == NBLITS:
         # print the timing info and quit
         frame_time = time.time() - tstart
-        print('%d frames: %.2f seconds' % (NBLITS, frame_time))
-        print('%d blits:  %.2f seconds' % (NBLITS, blit_time))
+        print('{:d} frames: {:.2f} seconds'.format(NBLITS, frame_time))
+        print('{:d} blits:  {:.2f} seconds'.format(NBLITS, blit_time))
         print()
-        print('FPS: %.2f' % (NBLITS/frame_time))
-        print('BPS: %.2f' % (NBLITS/blit_time))
+        print('FPS: {:.2f}'.format(NBLITS/frame_time))
+        print('BPS: {:.2f}'.format(NBLITS/blit_time))
         sys.exit()
 
     update_line.cnt += 1

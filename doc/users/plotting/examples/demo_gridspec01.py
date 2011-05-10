@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 def make_ticklabels_invisible(fig):
     for i, ax in enumerate(fig.axes):
-        ax.text(0.5, 0.5, "ax%d" % (i+1), va="center", ha="center")
+        ax.text(0.5, 0.5, "ax{}".format(i+1), va="center", ha="center")
         for tl in ax.get_xticklabels() + ax.get_yticklabels():
             tl.set_visible(False)
 

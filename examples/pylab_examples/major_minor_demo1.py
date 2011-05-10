@@ -12,12 +12,12 @@ can also turn labeling on for the minor ticker by setting the minor
 formatter
 
 Make a plot with major ticks that are multiples of 20 and minor ticks
-that are multiples of 5.  Label major ticks with %d formatting but
+that are multiples of 5.  Label major ticks with {:.0f} formatting but
 don't label minor ticks
 
-The MultipleLocator ticker class is used to place ticks on multiples of
-some base.  The FormatStrFormatter uses a string format string (eg
-'%d' or '%1.2f' or '%1.1f cm' ) to format the tick
+The MultipleLocator ticker class is used to place ticks on multiples
+of some base.  The NewFormatStrFormatter uses a string format string
+(eg '{:d}' or '{:1.2f}' or '{:1.1f} cm' ) to format the tick
 
 The pylab interface grid command chnages the grid settings of the
 major ticks of the y and y axis together.  If you want to control the
@@ -34,7 +34,7 @@ from pylab import *
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 majorLocator   = MultipleLocator(20)
-majorFormatter = FormatStrFormatter('%d')
+majorFormatter = NewFormatStrFormatter('{.0f}')
 minorLocator   = MultipleLocator(5)
 
 

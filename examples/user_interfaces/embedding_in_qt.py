@@ -118,20 +118,20 @@ class ApplicationWindow(QMainWindow):
         self.fileQuit()
 
     def about(self):
-        QMessageBox.about(self, "About %s" % progname,
-"""%(prog)s version %(version)s
+        QMessageBox.about(self, "About {}".format(progname),
+"""{prog} version {version}
 Copyright \N{COPYRIGHT SIGN} 2005 Florent Rougon
 
 This program is a simple example of a Qt application embedding matplotlib
 canvases.
 
 It may be used and modified with no restriction; raw copies as well as
-modified versions may be distributed without limitation."""
-                          % {"prog": progname, "version": progversion})
+modified versions may be distributed without limitation.""".format(
+                              prog=progname, version=progversion)
 
 
 aw = ApplicationWindow()
-aw.setCaption("%s" % progname)
+aw.setCaption(str(progname))
 qApp.setMainWidget(aw)
 aw.show()
 sys.exit(qApp.exec_loop())

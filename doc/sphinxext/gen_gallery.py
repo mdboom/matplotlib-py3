@@ -1,5 +1,5 @@
 # generate a thumbnail gallery of examples
-template = """\
+header_template = """\
 {%% extends "layout.html" %%}
 {%% set title = "Thumbnail gallery" %%}
 
@@ -9,7 +9,9 @@ template = """\
 <h3>Click on any image to see full size image and source code</h3>
 <br/>
 
-%s
+"""
+
+footer_template = """
 {%% endblock %%}
 """
 
@@ -69,16 +71,16 @@ def gen_gallery(app, doctree):
 
             m = multiimage.match(basename)
             if m is None:
-                pyfile = '%s.py'%basename
+                pyfile = '{}.py'.format(basename)
             else:
                 basename = m.group(1)
-                pyfile = '%s.py'%basename
+                pyfile = '{}.py'.format(basename)
 
             data.append((subdir, basename,
                          os.path.join(rootdir, subdir, 'thumbnails', filename)))
 
     link_template = """\
-    <a href="%s"><img src="%s" border="0" alt="%s"/></a>
+    <a href="{}"><img src="{}" border="0" alt="{}"/></a>
     """
 
     if len(data) == 0:
@@ -87,12 +89,12 @@ def gen_gallery(app, doctree):
     rows = []
     for (subdir, basename, thumbfile) in data:
         if thumbfile is not None:
-            link = 'examples/%s/%s.html'%(subdir, basename)
-            rows.append(link_template%(link, thumbfile, basename))
+            link = os.path.join('examples', subdir, basename + '.html')
+            rows.append(link_template.format(link, thumbfile, basename))
 
     # Only write out the file if the contents have actually changed.
     # Otherwise, this triggers a full rebuild of the docs
-    content = template%'\n'.join(rows)
+    content = header_template + '\n'.join(rows) + footer_template
     gallery_path = os.path.join(app.builder.srcdir, '_templates', 'gallery.html')
     if os.path.exists(gallery_path):
         fh = file(gallery_path, 'r')

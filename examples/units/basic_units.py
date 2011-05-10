@@ -107,7 +107,7 @@ class TaggedValue (object):
     # generate a new subclass for value
     value_class = type(value)
     try:
-        subcls = type('TaggedValue_of_%s' % (value_class.__name__),
+        subcls = type('TaggedValue_of_{}'.format(value_class.__name__),
                       tuple([cls, value_class]),
                       {})
         if subcls not in units.registry:
@@ -187,7 +187,7 @@ class BasicUnit(object):
 
 
   def __repr__(self):
-    return 'BasicUnit(%s)'%self.name
+    return 'BasicUnit({})'.format(self.name)
 
   def __str__(self):
     return self.fullname
@@ -231,7 +231,7 @@ class BasicUnit(object):
     return self.conversions[unit]
 
   def convert_value_to(self, value, unit):
-      #print 'convert value to: value ="%s", unit="%s"'%(value, type(unit)), self.conversions  
+      #print 'convert value to: value ="%s", unit="%s"'%(value, type(unit)), self.conversions
       conversion_fn = self.conversions[unit]
       ret = conversion_fn(value)
       return ret
@@ -297,9 +297,9 @@ def rad_fn(x,pos=None):
   elif n == 2:
     return r'$\pi$'
   elif n % 2 == 0:
-    return r'$%s\pi$' % (n/2,)
+    return r'${}\pi$'.format(n/2)
   else:
-    return r'$%s\pi/2$' % (n,)
+    return r'${}\pi/2$'.format(n)
 
 
 class BasicUnitConverter(units.ConversionInterface):
@@ -317,7 +317,7 @@ class BasicUnitConverter(units.ConversionInterface):
         elif unit==degrees:
             return units.AxisInfo(
               majloc=ticker.AutoLocator(),
-              majfmt=ticker.FormatStrFormatter(r'$%i^\circ$'),
+              majfmt=ticker.NewFormatStrFormatter(r'${.0f}^\circ$'),
               label=unit.fullname,
                 )
         elif unit is not None:

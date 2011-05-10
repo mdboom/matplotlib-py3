@@ -30,7 +30,7 @@ class FooConverter:
         if unit==1.0 or unit==2.0:
             return units.AxisInfo(
                 majloc = ticker.IndexLocator( 4, 0 ),
-                majfmt = ticker.FormatStrFormatter("VAL: %s"),
+                majfmt = ticker.NewFormatStrFormatter("VAL: {}"),
                 label='foo',
                 )
 

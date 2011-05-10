@@ -89,7 +89,7 @@ if __name__ == '__main__':
         figures = range(1, nfigs+1)
 
     for fig in figures:
-        fn_name = "fig_%d" % fig
+        fn_name = "fig_{:d}".format(fig)
         fn = globals()[fn_name]
         fn()
 

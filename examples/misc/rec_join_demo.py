@@ -28,4 +28,4 @@ defaults = {'marker':-1, 'close':np.NaN, 'low':-4444.}
 for s in ('inner', 'outer', 'leftouter'):
     rec = mlab.rec_join(['date', 'high'], r1, r2,
             jointype=s, defaults=defaults)
-    print("\n%sjoin :\n%s" % (s, mlab.rec2txt(rec)))
+    print("\n{}join :\n{}".format(s, mlab.rec2txt(rec)))

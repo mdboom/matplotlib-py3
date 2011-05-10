@@ -40,16 +40,17 @@ CS = plt.contour(X, Y, Z)
 # This remove trailing zero so '1.0' becomes '1'
 class nf(float):
      def __repr__(self):
-         str = '%.1f' % (self.__float__(),)
+         str = '{:.1f}'.format(self.__float__())
          if str[-1]=='0':
-             return '%.0f' % self.__float__()
+             return '{:.0f}'.format(self.__float__())
          else:
-             return '%.1f' % self.__float__()
+             return '{:.1f}'.format(self.__float__())
 
 # Recast levels to new class
 CS.levels = [nf(val) for val in CS.levels ]
 
 # Label levels with specially formatted floats
+# PY3K TODO: Support new-style formatting in clabel
 plt.clabel(CS, CS.levels, inline=True, fmt='%r %%', fontsize=10)
 
 ##################################################

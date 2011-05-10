@@ -136,6 +136,8 @@ class ContourLabeler:
         BlockingContourLabeler (case of manual label placement).
         """
 
+        # PY3K TODO: Support new-style formatting
+
         fontsize = kwargs.get('fontsize', None)
         inline = kwargs.get('inline', 1)
         inline_spacing = kwargs.get('inline_spacing', 5)

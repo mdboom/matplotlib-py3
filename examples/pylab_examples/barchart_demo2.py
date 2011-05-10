@@ -61,7 +61,7 @@ plt.plot([50,50], [0, 5], 'grey', alpha=0.25)
 # the string
 
 def withnew(i, scr):
-    if testMeta[i] != '' : return '%s\n'%scr
+    if testMeta[i] != '' : return '{}\n'.format(scr)
     else: return scr
 scoreLabels = [withnew(i, scr) for i,scr in enumerate(scores)]
 scoreLabels = [i+j for i,j in zip(scoreLabels, testMeta)]

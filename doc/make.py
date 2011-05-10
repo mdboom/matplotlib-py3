@@ -40,7 +40,7 @@ def html():
         options = "-D plot_formats=\"[('png', 80)]\""
     else:
         options = ''
-    if os.system('sphinx-build %s -P -b html -d build/doctrees . build/html' % options):
+    if os.system('sphinx-build {} -P -b html -d build/doctrees . build/html'.format(options)):
         raise SystemExit("Building HTML failed.")
 
     figures_dest_path = 'build/html/pyplots'
@@ -119,7 +119,7 @@ if len(sys.argv)>1:
     for arg in sys.argv[1:]:
         func = funcd.get(arg)
         if func is None:
-            raise SystemExit('Do not know how to handle %s; valid args are %s'%(
+            raise SystemExit('Do not know how to handle {}; valid args are {}'.format(
                     arg, funcd.keys()))
         func()
 else:

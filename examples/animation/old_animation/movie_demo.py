@@ -109,7 +109,7 @@ for i in range(len(y)) :
     # documentation for details.  In this case, we are saving the
     # images directly to a file without displaying them.
     #
-    filename = str('%03d' % i) + '.png'
+    filename = str('{:03d}.png'.format(i))
     plt.savefig(filename, dpi=100)
 
     #
@@ -149,7 +149,7 @@ command = ('mencoder',
 
 #os.spawnvp(os.P_WAIT, 'mencoder', command)
 
-print("\n\nabout to execute:\n%s\n\n" % ' '.join(command))
+print("\n\nabout to execute:\n{}\n\n".format(' '.join(command)))
 subprocess.check_call(command)
 
 print("\n\n The movie was written to 'output.avi'")

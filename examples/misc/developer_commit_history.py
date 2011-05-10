@@ -42,4 +42,4 @@ dsu = [((today - lastdate).days, developer) for developer, lastdate in lastd.ite
 
 dsu.sort()
 for timedelta, developer in dsu:
-    print('%s : %d'%(developer, timedelta))
+    print('{} : {}'.format(developer, timedelta))

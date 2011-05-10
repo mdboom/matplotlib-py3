@@ -22,7 +22,7 @@ def make_xaxis(ax, yloc, offset=0.05, **props):
     tickline.set_clip_on(False)
     axline.set_clip_on(False)
     for loc in locs:
-        ax.text(loc, yloc-offset, '%1.1f'%loc,
+        ax.text(loc, yloc-offset, '{:1.1f}'.format(loc),
                 horizontalalignment='center',
                 verticalalignment='top')
 
@@ -37,7 +37,7 @@ def make_yaxis(ax, xloc=0, offset=0.05, **props):
     axline.set_clip_on(False)
 
     for loc in locs:
-        ax.text(xloc-offset, loc, '%1.1f'%loc,
+        ax.text(xloc-offset, loc, '{:1.1f}'.format(loc),
                 verticalalignment='center',
                 horizontalalignment='right')
 

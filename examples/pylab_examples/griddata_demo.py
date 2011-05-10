@@ -20,9 +20,9 @@ CS = plt.contourf(xi,yi,zi,15,cmap=plt.cm.jet)
 plt.colorbar() # draw colorbar
 # plot data points.
 plt.scatter(x,y,marker='o',c='b',s=5,zorder=10)
-plt.xlim(-2,2)    
-plt.ylim(-2,2)     
-plt.title('griddata test (%d points)' % npts)
+plt.xlim(-2,2)
+plt.ylim(-2,2)
+plt.title('griddata test ({:d} points)'.format(npts))
 plt.show()
 
 # test case that scikits.delaunay fails on, but natgrid passes..

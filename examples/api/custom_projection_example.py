@@ -281,7 +281,7 @@ class HammerAxes(Axes):
         else:
             ew = 'W'
         # \u00b0 : degree symbol
-        return '%f\u00b0%s, %f\u00b0%s' % (abs(lat), ns, abs(long), ew)
+        return '{:f}\u00b0{}, {:f}\u00b0{}'.format(abs(lat), ns, abs(long), ew)
 
     class DegreeFormatter(Formatter):
         """
@@ -295,7 +295,7 @@ class HammerAxes(Axes):
             degrees = (x / np.pi) * 180.0
             degrees = round(degrees / self._round_to) * self._round_to
             # \u00b0 : degree symbol
-            return "%d\u00b0" % degrees
+            return "{:1.0f}\u00b0".format(degrees)
 
     def set_longitude_grid(self, degrees):
         """

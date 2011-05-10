@@ -59,7 +59,7 @@ def test_window_extent(ax, usetex, preview):
     ax.set_ylim(-.8,3.9)
 
 
-    ax.set_title("usetex=%s\npreview=%s" % (str(usetex), str(preview)))
+    ax.set_title("usetex={}\npreview={}".format(str(usetex), str(preview)))
 
 
 

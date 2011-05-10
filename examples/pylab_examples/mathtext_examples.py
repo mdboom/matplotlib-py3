@@ -85,7 +85,7 @@ if '--latex' in sys.argv:
 
     for i, s in enumerate(stests):
         s = re.sub(r"(?<!\\)\$", "$$", s)
-        fd.write("\\item %s\n" % s)
+        fd.write("\\item {}\n".format(s))
 
     fd.write("\\end{enumerate}\n")
     fd.write("\\end{document}\n")

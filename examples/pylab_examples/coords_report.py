@@ -5,7 +5,7 @@
 from pylab import *
 
 def millions(x):
-    return '$%1.1fM' % (x*1e-6)
+    return '${:1.1f}M'.format(x*1e-6)
 
 x =     rand(20)
 y =     1e7*rand(20)

@@ -172,7 +172,7 @@ hoverprops = ItemProperties(labelcolor='white', bgcolor='blue',
 menuitems = []
 for label in ('open', 'close', 'save', 'save as', 'quit'):
     def on_select(item):
-        print('you selected %s' % item.labelstr)
+        print('you selected {}'.format(item.labelstr))
     item = MenuItem(fig, label, props=props, hoverprops=hoverprops,
                     on_select=on_select)
     menuitems.append(item)

@@ -31,7 +31,7 @@ else:
 if os.path.exists(fpath):
     prop = fm.FontProperties(fname=fpath)
     fname = os.path.split(fpath)[1]
-    ax.set_title('this is a special font: %s' % fname, fontproperties=prop)
+    ax.set_title('this is a special font: {}'.format(fname), fontproperties=prop)
 else:
     ax.set_title('Demo fails--cannot find a demo font')
 ax.set_xlabel('This is the default font')

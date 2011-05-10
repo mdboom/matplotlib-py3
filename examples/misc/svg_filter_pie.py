@@ -3,7 +3,7 @@ Demonstrate SVG filtering effects which might be used with mpl.
 The pie chart drawing code is borrowed from pie_demo.py
 
 Note that the filtering effects are only effective if your svg rederer
-support it. 
+support it.
 """
 
 
@@ -24,6 +24,7 @@ explode=(0, 0.05, 0, 0)
 
 # We want to draw the shadow for each pie but we will not use "shadow"
 # option as it does'n save the references to the shadow patches.
+# PY3K TODO: Use new-style formatting for autopct
 pies = ax.pie(fracs, explode=explode, labels=labels, autopct='%1.1f%%')
 
 for w in pies[0]:
@@ -39,7 +40,7 @@ for w in pies[0]:
     s.set_gid(w.get_gid()+"_shadow")
     s.set_zorder(w.get_zorder() - 0.1)
     ax.add_patch(s)
-    
+
 
 # save
 from StringIO import StringIO
@@ -62,16 +63,16 @@ filter_def = """
     <filter id='dropshadow' height='1.2' width='1.2'>
       <feGaussianBlur result='blur' stdDeviation='2'/>
     </filter>
-    
+
     <filter id='MyFilter' filterUnits='objectBoundingBox' x='0' y='0' width='1' height='1'>
       <feGaussianBlur in='SourceAlpha' stdDeviation='4%' result='blur'/>
       <feOffset in='blur' dx='4%' dy='4%' result='offsetBlur'/>
-      <feSpecularLighting in='blur' surfaceScale='5' specularConstant='.75' 
+      <feSpecularLighting in='blur' surfaceScale='5' specularConstant='.75'
            specularExponent='20' lighting-color='#bbbbbb' result='specOut'>
         <fePointLight x='-5000%' y='-10000%' z='20000%'/>
       </feSpecularLighting>
       <feComposite in='specOut' in2='SourceAlpha' operator='in' result='specOut'/>
-      <feComposite in='SourceGraphic' in2='specOut' operator='arithmetic' 
+      <feComposite in='SourceGraphic' in2='specOut' operator='arithmetic'
     k1='0' k2='1' k3='1' k4='0'/>
     </filter>
   </defs>
@@ -91,5 +92,5 @@ for i, pie_name in enumerate(labels):
     shadow.set("filter",'url(#dropshadow)')
 
 fn = "svg_filter_pie.svg"
-print "Saving '%s'" % fn
+print "Saving '{}'".format(fn)
 ET.ElementTree(tree).write(fn)

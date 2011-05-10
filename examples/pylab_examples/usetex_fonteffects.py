@@ -6,7 +6,7 @@ matplotlib.rc('text', usetex=True)
 import pylab
 
 def setfont(font):
-    return r'\font\a %s at 14pt\a ' % font
+    return r'\font\a {} at 14pt\a '.format(font)
 
 for y, font, text in zip(range(5),
                          ['ptmr8r', 'ptmri8r', 'ptmro8r', 'ptmr8rn', 'ptmrr8re'],

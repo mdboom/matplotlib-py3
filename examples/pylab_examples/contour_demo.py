@@ -78,6 +78,7 @@ CS = plt.contour(Z, levels,
 zc = CS.collections[6]
 plt.setp(zc, linewidth=4)
 
+# PY3K TODO: Support new-style formatting for fmt
 plt.clabel(CS, levels[1::2],  # label every second level
            inline=1,
            fmt='%1.1f',

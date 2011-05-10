@@ -60,7 +60,7 @@ data = [[  66386,  174296,   75131,  577908,   32015],
         [ 139361,  331509,  343164,  781380,   52269]]
 
 colLabels = ('Freeze', 'Wind', 'Flood', 'Quake', 'Hail')
-rowLabels = ['%d year' % x for x in (100, 50, 20, 10, 5)]
+rowLabels = ['{:d} year'.format(x) for x in (100, 50, 20, 10, 5)]
 
 # Get some pastel shades for the colours
 colours = get_colours(len(colLabels))
@@ -74,7 +74,7 @@ yoff = array([0.0] * len(colLabels)) # the bottom values for stacked bar chart
 for row in range(rows):
     bar(ind, data[row], width, bottom=yoff, color=colours[row])
     yoff = yoff + data[row]
-    cellText.append(['%1.1f' % (x/1000.0) for x in yoff])
+    cellText.append(['{:1.1f}'.format(x/1000.0) for x in yoff])
 
 # Add a table at the bottom of the axes
 colours.reverse()
@@ -85,7 +85,7 @@ the_table = table(cellText=cellText,
                   loc='bottom')
 ylabel("Loss $1000's")
 vals = arange(0, 2500, 500)
-yticks(vals*1000, ['%d' % val for val in vals])
+yticks(vals*1000, [str(int(val)) for val in vals])
 xticks([])
 title('Loss by Disaster')
 

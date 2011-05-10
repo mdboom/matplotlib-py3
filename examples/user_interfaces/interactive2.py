@@ -20,8 +20,8 @@ import __main__
 
 banner = """GTK Interactive Python Console
 Thanks to Jon Anderson
-%s
-""" % sys.version
+{}
+""".format(sys.version)
 
 banner += """
 
@@ -97,7 +97,7 @@ class Completer:
     n = len(attr)
     for word in words:
       if word[:n] == attr and word != "__builtins__":
-        matches.append("%s.%s" % (expr, word))
+        matches.append("{}.{}".format(expr, word))
     return matches
 
 def get_class_members(klass):
@@ -369,7 +369,7 @@ def main():
   if len(sys.argv)>1:
     fname = sys.argv[1]
     if not os.path.exists(fname):
-      print('%s does not exist' % fname)
+      print('{} does not exist'.format(fname))
     for line in file(fname):
       line = line.strip()
 

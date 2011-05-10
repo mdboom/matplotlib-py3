@@ -48,8 +48,7 @@ class RGBA(traits.HasTraits):
        self.b = b
        self.a = a
    def __repr__(self):
-       return 'r,g,b,a = (%1.2f, %1.2f, %1.2f, %1.2f)'%\
-              (self.r, self.g, self.b, self.a)
+       return 'r,g,b,a = ({0.r:1.2f}, {0.g:1.2f}, {0.b:1.2f}, {0.a:1.2f})'.format(self)
 
 def tuple_to_rgba(ob, name, val):
    tup = [float(x) for x in val]

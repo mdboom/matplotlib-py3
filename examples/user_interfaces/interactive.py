@@ -218,9 +218,9 @@ class MatplotLibInterpreter(GTKInterpreter):
             try:
                 inFile = file(fname, 'r')
             except IOError:
-                print('*** ERROR *** Could not read file <%s>' % fname)
+                print('*** ERROR *** Could not read file <{}>'.format(fname))
             else:
-                print('*** Executing file <%s>:' % fname)
+                print('*** Executing file <{}>:'.format(fname))
                 for line in inFile:
                     if line.lstrip().find('show()')==0: continue
                     print('>>', line)

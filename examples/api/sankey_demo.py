@@ -132,7 +132,7 @@ def sankey(ax,
         if labels=='':                   # No labels
             return labels
         elif labels is None:             # Default labels
-            return [ '%2d%%' % val for val in values ]
+            return [ '{:2d}%'.format(val) for val in values ]
         else:
             assert len(labels)==len(values)
             return labels
@@ -172,7 +172,7 @@ if __name__=='__main__':
 
     outputs = [10.,-20.,5.,15.,-10.,40.]
     outlabels = ['First','Second','Third','Fourth','Fifth','Hurray!']
-    outlabels = [ s+'\n%d%%' % abs(l) for l,s in zip(outputs,outlabels) ]
+    outlabels = [ s+'\n{:1.0f}%'.format(abs(l)) for l,s in zip(outputs,outlabels) ]
 
     inputs = [60.,-25.,15.]
 

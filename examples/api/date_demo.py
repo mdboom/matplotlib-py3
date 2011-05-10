@@ -45,7 +45,7 @@ datemax = datetime.date(r.date.max().year+1, 1, 1)
 ax.set_xlim(datemin, datemax)
 
 # format the coords message box
-def price(x): return '$%1.2f'%x
+def price(x): return '${:1.2f}'.format(x)
 ax.format_xdata = mdates.DateFormatter('%Y-%m-%d')
 ax.format_ydata = price
 ax.grid(True)

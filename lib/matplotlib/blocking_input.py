@@ -42,7 +42,7 @@ class BlockingInput(object):
         # subclasses
         self.add_event(event)
 
-        verbose.report("Event %i" % len(self.events))
+        verbose.report("Event {:d}".format(len(self.events)))
 
         # This will extract info from events
         self.post_event()
@@ -219,8 +219,8 @@ class BlockingMouseInput(BlockingInput):
         """
         self.clicks.append((event.xdata,event.ydata))
 
-        verbose.report("input %i: %f,%f" %
-                       (len(self.clicks),event.xdata, event.ydata))
+        verbose.report("input {:d}: {:f},{:f}".format(
+            len(self.clicks),event.xdata, event.ydata))
 
         # If desired plot up click
         if self.show_clicks:

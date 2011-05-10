@@ -77,6 +77,7 @@ CS4 = contour(X, Y, Z, levels,
                        linewidths = (3,),
                        origin = origin)
 title('Listed colors (3 masked regions)')
+# PY3K TODO: Support new-style formatting in clabel
 clabel(CS4, fmt = '%2.1f', colors = 'w', fontsize=14)
 
 # Notice that the colorbar command gets all the information it

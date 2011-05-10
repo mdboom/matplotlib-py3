@@ -4976,6 +4976,8 @@ class Axes(martist.Artist):
           :class:`~matplotlib.text.Text` instances for the numeric
           labels.
         """
+        # PY3K TODO: Support new-style formatting for autopct
+
         self.set_frame_on(False)
 
         x = np.asarray(x).astype(np.float32)

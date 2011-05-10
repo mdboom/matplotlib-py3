@@ -7,7 +7,7 @@ import numpy as np
 def myplot(ax):
     t1 = np.arange(0.0, 1.0, 0.1)
     for n in [1, 2, 3, 4]:
-        ax.plot(t1, t1**n, label="n=%d"%(n,))
+        ax.plot(t1, t1**n, label="n={}".format(n))
 
 ax1 = plt.subplot(3,1,1)
 ax1.plot([1], label="multi\nline")

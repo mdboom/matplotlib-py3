@@ -12,7 +12,7 @@ ax = subplot(111)
 for i in range(50):  # 50 frames
     cla()
     imshow(rand(5,5), interpolation='nearest')
-    fname = '_tmp%03d.png'%i
+    fname = '_tmp{:03d}.png'.format(i)
     print('Saving frame', fname)
     savefig(fname)
     files.append(fname)

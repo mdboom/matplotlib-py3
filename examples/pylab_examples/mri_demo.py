@@ -5,7 +5,7 @@ from pylab import *
 import matplotlib.cbook as cbook
 # data are 256x256 16 bit integers
 dfile = cbook.get_sample_data('s1045.ima', asfileobj=False)
-print ('loading image %s' % dfile)
+print ('loading image {}'.format(dfile))
 im = np.fromstring(open(dfile, 'rb').read(), np.uint16).astype(float)
 im.shape = 256, 256
 

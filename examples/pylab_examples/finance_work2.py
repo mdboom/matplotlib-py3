@@ -119,7 +119,7 @@ ax1.text(0.6, 0.1, '<30 = oversold', transform=ax1.transAxes, fontsize=textsize)
 ax1.set_ylim(0, 100)
 ax1.set_yticks([30,70])
 ax1.text(0.025, 0.95, 'RSI (14)', va='top', transform=ax1.transAxes, fontsize=textsize)
-ax1.set_title('%s daily'%ticker)
+ax1.set_title('{} daily'.format(ticker))
 
 ### plot the price and volume data
 dx = r.adj_close - r.close
@@ -139,12 +139,11 @@ linema200, = ax2.plot(r.date, ma200, color='red', lw=2, label='MA (200)')
 
 
 last = r[-1]
-s = '%s O:%1.2f H:%1.2f L:%1.2f C:%1.2f, V:%1.1fM Chg:%+1.2f' % (
+s = '{0} O:{last.open:1.2f} H:{last.high:1.2f} L:{last.low:1.2f} C:{last.close:1.2f}, V:{1}M Chg:{2:+1.2f}'.format(
     today.strftime('%d-%b-%Y'),
-    last.open, last.high,
-    last.low, last.close,
     last.volume*1e-6,
-    last.close-last.open )
+    last.close-last.open,
+    last=last)
 t4 = ax2.text(0.3, 0.9, s, transform=ax2.transAxes, fontsize=textsize)
 
 props = font_manager.FontProperties(size=10)
@@ -171,7 +170,8 @@ ax3.plot(r.date, ema9, color='blue', lw=1)
 ax3.fill_between(r.date, macd-ema9, 0, alpha=0.5, facecolor=fillcolor, edgecolor=fillcolor)
 
 
-ax3.text(0.025, 0.95, 'MACD (%d, %d, %d)'%(nfast, nslow, nema), va='top',
+ax3.text(0.025, 0.95,
+         'MACD ({:.0f}, {:.0f}, {:0.f})'.format(nfast, nslow, nema), va='top',
          transform=ax3.transAxes, fontsize=textsize)
 
 #ax3.set_yticks([])

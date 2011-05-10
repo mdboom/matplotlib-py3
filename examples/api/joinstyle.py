@@ -15,7 +15,7 @@ def plot_angle(ax, x, y, angle, style):
     ax.plot(xx[1:], yy[1:], lw=1, color='black')
     ax.plot(xx[1::-1], yy[1::-1], lw=1, color='black')
     ax.plot(xx[1:2], yy[1:2], 'o', color='red', markersize=3)
-    ax.text(x,y+.2,'%.0f degrees' % angle)
+    ax.text(x,y+.2,'{:.0f} degrees'.format(angle))
 
 fig = plt.figure()
 ax = fig.add_subplot(111)

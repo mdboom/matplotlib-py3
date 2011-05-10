@@ -19,7 +19,7 @@ def figs():
     for fname in glob.glob('*.py'):
         if fname.split('/')[-1] == __file__.split('/')[-1]: continue
         basename, ext = os.path.splitext(fname)
-        imagefiles = dict([('%s.%s'%(basename, format), dpi)
+        imagefiles = dict([('{}.{}'.format(basename, format), dpi)
                            for format, dpi in formats])
         all_exists = True
         for imagefile in imagefiles:
@@ -28,9 +28,9 @@ def figs():
                 break
 
         if all_exists:
-            print('    already have %s'%fname)
+            print('    already have {}'.format(fname))
         else:
-            print('    building %s'%fname)
+            print('    building {}'.format(fname))
             plt.close('all')    # we need to clear between runs
             mplshell.magic_run(basename)
             for imagefile, dpi in imagefiles.iteritems():
@@ -44,7 +44,7 @@ def figs():
 
 def clean():
     patterns = (['#*', '*~', '*pyc'] +
-                ['*.%s' % format for format, dpi in formats])
+                ['*.{}'.format(format) for format, dpi in formats])
     for pattern in patterns:
         for fname in glob.glob(pattern):
             os.remove(fname)
@@ -64,7 +64,7 @@ if len(sys.argv)>1:
     for arg in sys.argv[1:]:
         func = funcd.get(arg)
         if func is None:
-            raise SystemExit('Do not know how to handle %s; valid args are'%(
+            raise SystemExit('Do not know how to handle {}; valid args are {}'.format(
                     arg, funcd.keys()))
         func()
 else:

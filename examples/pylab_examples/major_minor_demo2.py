@@ -4,10 +4,10 @@ Set the major ticks on the ints and minor ticks on multiples of 0.2
 """
 
 from pylab import *
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from matplotlib.ticker import MultipleLocator, NewFormatStrFormatter
 
 majorLocator   = MultipleLocator(1)
-majorFormatter = FormatStrFormatter('%d')
+majorFormatter = NewFormatStrFormatter('{:.0f}')
 minorLocator   = MultipleLocator(.2)
 
 

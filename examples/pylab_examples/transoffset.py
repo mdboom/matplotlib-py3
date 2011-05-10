@@ -36,7 +36,7 @@ transOffset = offset_copy(ax.transData, fig=fig,
 
 for x, y in zip(X, Y):
     P.plot((x,),(y,), 'ro')
-    P.text(x, y, '%d, %d' % (int(x),int(y)), transform=transOffset)
+    P.text(x, y, '{}, {}'.format(int(x),int(y)), transform=transOffset)
 
 
 # offset_copy works for polar plots also.
@@ -47,7 +47,7 @@ transOffset = offset_copy(ax.transData, fig=fig, y = 6, units='dots')
 
 for x, y in zip(X, Y):
     P.polar((x,),(y,), 'ro')
-    P.text(x, y, '%d, %d' % (int(x),int(y)),
+    P.text(x, y, '{}, {}'.format(int(x),int(y)),
                 transform=transOffset,
                 horizontalalignment='center',
                 verticalalignment='bottom')

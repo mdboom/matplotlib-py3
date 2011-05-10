@@ -92,6 +92,9 @@ axis.
 :class:`FormatStrFormatter`
     use a sprintf format string
 
+:class:`NewFormatStrFormatter`
+    use a sprintf format string
+
 :class:`ScalarFormatter`
     default formatter for scalars; autopick the fmt string
 
@@ -266,7 +269,8 @@ class FuncFormatter(Formatter):
 
 class FormatStrFormatter(Formatter):
     """
-    Use a format string to format the tick
+    Use an old-style format string (using Python's ``%`` operator) to
+    format the tick.
     """
     def __init__(self, fmt):
         self.fmt = fmt
@@ -274,6 +278,17 @@ class FormatStrFormatter(Formatter):
     def __call__(self, x, pos=None):
         'Return the format for tick val *x* at position *pos*'
         return self.fmt % x
+
+class NewFormatStrFormatter(Formatter):
+    """
+    Use a new Python ``str.format()`` string to format the tick.
+    """
+    def __init__(self, fmt):
+        self.fmt = fmt
+
+    def __call__(self, x, pos=None):
+        'Return the format for tick val *x* at position *pos*'
+        return self.fmt.format(x)
 
 class OldScalarFormatter(Formatter):
     """

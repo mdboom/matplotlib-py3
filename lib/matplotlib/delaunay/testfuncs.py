@@ -338,7 +338,7 @@ class LinearTester(object):
         ax.add_collection(lc)
 
         if interp:
-            title = '%s Interpolant' % self.name
+            title = '{} Interpolant'.format(self.name)
         else:
             title = 'Reference'
         if hasattr(func, 'title'):

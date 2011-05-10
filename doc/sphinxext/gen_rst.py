@@ -78,13 +78,13 @@ Matplotlib Examples
 
         subdirIndexFile = os.path.join(rstdir, 'index.rst')
         fhsubdirIndex = file(subdirIndexFile, 'w')
-        fhindex.write('    %s/index.rst\n\n'%subdir)
+        fhindex.write('    {}/index.rst\n\n'.format(subdir))
 
         fhsubdirIndex.write("""\
-.. _%s-examples-index:
+.. _{0}-examples-index:
 
 ##############################################
-%s Examples
+{0} Examples
 ##############################################
 
 .. htmlonly::
@@ -95,7 +95,7 @@ Matplotlib Examples
 .. toctree::
     :maxdepth: 1
 
-"""%(subdir, subdir))
+""".format(subdir))
 
         sys.stdout.write(subdir + ", ")
         sys.stdout.flush()
@@ -106,22 +106,18 @@ Matplotlib Examples
         for fullpath, fname, contents in data:
             basename, ext = os.path.splitext(fname)
             outputfile = os.path.join(outputdir, fname)
-            #thumbfile = os.path.join(thumb_dir, '%s.png'%basename)
-            #print '    static_dir=%s, basename=%s, fullpath=%s, fname=%s, thumb_dir=%s, thumbfile=%s'%(static_dir, basename, fullpath, fname, thumb_dir, thumbfile)
 
-            rstfile = '%s.rst'%basename
+            rstfile = basename + '.rst'
             outrstfile = os.path.join(rstdir, rstfile)
 
-            fhsubdirIndex.write('    %s\n'%rstfile)
+            fhsubdirIndex.write('    {}\n'.format(rstfile))
 
             if not out_of_date(fullpath, outrstfile):
                 continue
 
             fh = file(outrstfile, 'w')
-            fh.write('.. _%s-%s:\n\n'%(subdir, basename))
-            title = '%s example code: %s'%(subdir, fname)
-            #title = '<img src=%s> %s example code: %s'%(thumbfile, subdir, fname)
-
+            fh.write('.. _{}-{}:\n\n'.format(subdir, basename))
+            title = '{} example code: {}'.format(subdir, fname)
 
             fh.write(title + '\n')
             fh.write('='*len(title) + '\n\n')
@@ -135,15 +131,16 @@ Matplotlib Examples
                        not noplot_regex.search(contents))
 
             if do_plot:
-                fh.write("\n\n.. plot:: %s\n\n::\n\n" % fullpath)
+                fh.write("\n\n.. plot:: {}\n\n::\n\n".format(fullpath))
             else:
-                fh.write("[`source code <%s>`_]\n\n::\n\n" % fname)
+                fh.write("[`source code <{}>`_]\n\n::\n\n".format(fname))
                 fhstatic = file(outputfile, 'w')
                 fhstatic.write(contents)
                 fhstatic.close()
 
             # indent the contents
-            contents = '\n'.join(['    %s'%row.rstrip() for row in contents.split('\n')])
+            contents = '\n'.join(['    {}'.format(row.rstrip())
+                                  for row in contents.split('\n')])
             fh.write(contents)
 
             fh.write('\n\nKeywords: python, matplotlib, pylab, example, codex (see :ref:`how-to-search-examples`)')

@@ -202,6 +202,7 @@ def filtered_text(ax):
     # contour label
     cl = ax.clabel(CS, levels[1::2],  # label every second level
                    inline=1,
+                   # PY3K TODO: Use new-style formatting for clabel
                    fmt='%1.1f',
                    fontsize=11)
 
@@ -311,7 +312,7 @@ def light_filter_pie(ax):
 
 
 if 1:
- 
+
     plt.figure(1, figsize=(6, 6))
     plt.subplots_adjust(left=0.05, right=0.95)
 

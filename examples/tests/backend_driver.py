@@ -286,7 +286,7 @@ def report_missing(dir, flist):
     missing = list(pyfiles-flist-exclude)
     missing.sort()
     if missing:
-        print ('%s files not tested: %s'%(dir, ', '.join(missing)))
+        print ('{} files not tested: {}'.format(dir, ', '.join(missing)))
 
 def report_all_missing(directories):
     for f in directories:
@@ -334,17 +334,17 @@ def drive(backend, directories, python=['python'], switches = []):
                  for fname in files[d]]
 
     for fullpath in testcases:
-        print ('\tdriving %-40s' % (fullpath)),
+        print ('\tdriving {: <40}'.format(fullpath)),
         sys.stdout.flush()
         fpath, fname = os.path.split(fullpath)
 
         if fname in exclude:
-            print ('\tSkipping %s, known to fail on backend: %s'%backend)
+            print ('\tSkipping {}, known to fail on backend: {}'.format(fname, backend))
             continue
 
         basename, ext = os.path.splitext(fname)
         outfile = os.path.join(path, basename)
-        tmpfile_name = '_tmp_%s.py' % basename
+        tmpfile_name = '_tmp_{}.py'.format(basename)
         tmpfile = open(tmpfile_name, 'w')
 
         future_imports = 'from __future__ import division, print_function'
@@ -358,9 +358,9 @@ def drive(backend, directories, python=['python'], switches = []):
         tmpfile.writelines((
             future_imports+'\n',
             'import sys\n',
-            'sys.path.append("%s")\n' % fpath.replace('\\', '\\\\'),
+            'sys.path.append("{}")\n'.format(fpath.replace('\\', '\\\\')),
             'import matplotlib\n',
-            'matplotlib.use("%s")\n' % backend,
+            'matplotlib.use("{}")\n'.format(backend),
             'from pylab import savefig\n',
             'import numpy\n',
             'numpy.seterr(invalid="ignore")\n',
@@ -376,15 +376,14 @@ def drive(backend, directories, python=['python'], switches = []):
         if backend in rcsetup.interactive_bk:
             tmpfile.write('show()')
         else:
-            tmpfile.write('\nsavefig(r"%s", dpi=150)' % outfile)
+            tmpfile.write('\nsavefig(r"{}", dpi=150)'.format(outfile))
 
         tmpfile.close()
         start_time = time.time()
-        program = [x % {'name': basename} for x in python]
+        program = [x.format(name=basename) for x in python]
         ret = run(program + [tmpfile_name] + switches)
         end_time = time.time()
-        print ("%s %s" % ((end_time - start_time), ret))
-        #os.system('%s %s %s' % (python, tmpfile_name, ' '.join(switches)))
+        print ("{} {}".format((end_time - start_time), ret))
         os.remove(tmpfile_name)
         if ret:
             failures.append(fullpath)
@@ -445,7 +444,7 @@ if __name__ == '__main__':
         for d in localdirs:
             if d.lower() not in all_backends_set:
                 continue
-            print ('removing %s'%d)
+            print ('removing {}'.format(d))
             for fname in glob.glob(os.path.join(d, '*')):
                 os.remove(fname)
             os.rmdir(d)
@@ -458,7 +457,7 @@ if __name__ == '__main__':
         python = ['coverage.py', '-x']
     elif options.valgrind:
         python = ['valgrind', '--tool=memcheck', '--leak-check=yes',
-                  '--log-file=%(name)s', sys.executable]
+                  '--log-file={name}s', sys.executable]
     elif sys.platform == 'win32':
         python = [sys.executable]
     else:
@@ -466,7 +465,7 @@ if __name__ == '__main__':
 
     report_all_missing(options.dirs)
     for backend in options.backends:
-        print ('testing %s %s' % (backend, ' '.join(options.switches)))
+        print ('testing {} {}'.format(backend, ' '.join(options.switches)))
         t0 = time.time()
         failures[backend] = \
             drive(backend, options.dirs, python, options.switches)
@@ -475,10 +474,10 @@ if __name__ == '__main__':
 
     # print times
     for backend, elapsed in times.items():
-        print ('Backend %s took %1.2f minutes to complete' % (backend, elapsed))
+        print ('Backend {} took {:1.2f} minutes to complete'.format(backend, elapsed))
         failed = failures[backend]
         if failed:
-            print ('  Failures: %s' % failed)
+            print ('  Failures: {}'.format(failed))
         if 'template' in times:
-            print ('\ttemplate ratio %1.3f, template residual %1.3f' % (
+            print ('\ttemplate ratio {:1.3f}, template residual {:1.3f}'.format(
                 elapsed/times['template'], elapsed-times['template']))
