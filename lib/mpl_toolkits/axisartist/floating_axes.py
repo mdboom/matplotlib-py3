@@ -524,7 +524,7 @@ def floatingaxes_class_factory(axes_class):
 
     new_class = _floatingaxes_classes.get(axes_class)
     if new_class is None:
-        new_class = type("Floating %s" % (axes_class.__name__),
+        new_class = type("Floating{}".format(axes_class.__name__),
                          (FloatingAxesBase, axes_class),
                          {'_axes_class_floating': axes_class})
         _floatingaxes_classes[axes_class] = new_class

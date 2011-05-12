@@ -162,18 +162,17 @@ def fetch_historical_yahoo(ticker, date1, date2, cachename=None):
         d2 = (date2.month-1, date2.day, date2.year)
 
 
-    urlFmt = 'http://table.finance.yahoo.com/table.csv?a=%d&b=%d&c=%d&d=%d&e=%d&f=%d&s=%s&y=0&g=d&ignore=.csv'
+    urlFmt = 'http://table.finance.yahoo.com/table.csv?a={d1[0]:d}&b={d1[1]:d}&c={d1[2]:d}&d={d2[0]:d}&e={d2[1]:d}&f={d2[2]:d}&s={ticker}&y=0&g=d&ignore=.csv'
 
 
-    url =  urlFmt % (d1[0], d1[1], d1[2],
-                     d2[0], d2[1], d2[2], ticker)
+    url =  urlFmt.format(d1=d1, d2=d2, ticker=ticker)
 
 
     if cachename is None:
         cachename = os.path.join(cachedir, md5(url).hexdigest())
     if os.path.exists(cachename):
         fh = open(cachename)
-        verbose.report('Using cachefile %s for %s'%(cachename, ticker))
+        verbose.report('Using cachefile {} for {}'.format(cachename, ticker))
     else:
         if not os.path.isdir(cachedir):
             os.mkdir(cachedir)
@@ -182,7 +181,7 @@ def fetch_historical_yahoo(ticker, date1, date2, cachename=None):
         fh = open(cachename, 'wb')
         fh.write(urlfh.read())
         fh.close()
-        verbose.report('Saved %s data to cache file %s'%(ticker, cachename))
+        verbose.report('Saved {} data to cache file {}'.format(ticker, cachename))
         fh = open(cachename, 'r')
 
     return fh
@@ -224,7 +223,7 @@ def quotes_historical_yahoo(ticker, date1, date2, asobject=False,
         if len(ret) == 0:
             return None
     except IOError as exc:
-        warnings.warn('fh failure\n%s'%(exc.strerror[1]))
+        warnings.warn('fh failure\n{}'.format(exc.strerror[1]))
         return None
 
     return ret

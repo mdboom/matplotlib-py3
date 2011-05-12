@@ -206,7 +206,7 @@ class GridFinderBase(object):
                      "tick_formatter2"]:
                 setattr(self, k, kw[k])
             else:
-                raise ValueError("unknown update property '%s'" % k)
+                raise ValueError("unknown update property '{}'".format(k))
 
 
 

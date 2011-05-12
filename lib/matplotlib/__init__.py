@@ -165,7 +165,7 @@ import numpy
 nmajor, nminor = [int(n) for n in numpy.__version__.split('.')[:2]]
 if not (nmajor > 1 or (nmajor == 1 and nminor >= 1)):
     raise ImportError(
-            'numpy 1.1 or later is required; you have %s' % numpy.__version__)
+            'numpy 1.1 or later is required; you have {}'.format(numpy.__version__))
 
 def is_string_like(obj):
     if hasattr(obj, 'shape'): return 0
@@ -214,7 +214,7 @@ class Verbose:
         if self._commandLineVerbose is not None:
             level = self._commandLineVerbose
         if level not in self.levels:
-            raise ValueError('Illegal verbose string "%s".  Legal values are %s'%(level, self.levels))
+            raise ValueError('Illegal verbose string "{}".  Legal values are {}'.format(level, self.levels))
         self.level = level
 
     def set_fileo(self, fname):
@@ -228,7 +228,7 @@ class Verbose:
             try:
                 fileo = open(fname, 'w')
             except IOError:
-                raise ValueError('Verbose object could not open log file "%s" for writing.\nCheck your matplotlibrc verbose.fileo setting'%fname)
+                raise ValueError('Verbose object could not open log file "{}" for writing.\nCheck your matplotlibrc verbose.fileo setting'.format(fname))
             else:
                 self.fileo = fileo
 
@@ -243,6 +243,7 @@ class Verbose:
             return True
         return False
 
+    # PY3K TODO: Support new-style formatting in wrap
     def wrap(self, fmt, func, level='helpful', always=True):
         """
         return a callable function that wraps func and reports it
@@ -362,12 +363,12 @@ def checkdep_ps_distiller(s):
     gs_v = checkdep_ghostscript()
     if compare_versions(gs_v, gs_sugg): pass
     elif compare_versions(gs_v, gs_req):
-        verbose.report(('ghostscript-%s found. ghostscript-%s or later '
-                        'is recommended to use the ps.usedistiller option.') % (gs_v, gs_sugg))
+        verbose.report(('ghostscript-{} found. ghostscript-{} or later '
+                        'is recommended to use the ps.usedistiller option.').format(gs_v, gs_sugg))
     else:
         flag = False
         warnings.warn(('matplotlibrc ps.usedistiller option can not be used '
-                       'unless ghostscript-%s or later is installed on your system') % gs_req)
+                       'unless ghostscript-{} or later is installed on your system').format(gs_req))
 
     if s == 'xpdf':
         pdftops_req = '3.0'
@@ -381,7 +382,7 @@ def checkdep_ps_distiller(s):
         else:
             flag = False
             warnings.warn(('matplotlibrc ps.usedistiller can not be set to '
-                           'xpdf unless xpdf-%s or later is installed on your system') % pdftops_req)
+                           'xpdf unless xpdf-{} or later is installed on your system').format(pdftops_req))
 
     if flag:
         return s
@@ -403,8 +404,8 @@ def checkdep_usetex(s):
     else:
         flag = False
         warnings.warn(('matplotlibrc text.usetex option can not be used '
-                       'unless TeX-%s or later is '
-                       'installed on your system') % tex_req)
+                       'unless TeX-{} or later is '
+                       'installed on your system').format(tex_req))
 
     dvipng_v = checkdep_dvipng()
     if compare_versions(dvipng_v, dvipng_req): pass
@@ -417,14 +418,14 @@ def checkdep_usetex(s):
     gs_v = checkdep_ghostscript()
     if compare_versions(gs_v, gs_sugg): pass
     elif compare_versions(gs_v, gs_req):
-        verbose.report(('ghostscript-%s found. ghostscript-%s or later is '
+        verbose.report(('ghostscript-{} found. ghostscript-{} or later is '
                         'recommended for use with the text.usetex '
-                        'option.') % (gs_v, gs_sugg))
+                        'option.').format(gs_v, gs_sugg))
     else:
         flag = False
         warnings.warn(('matplotlibrc text.usetex can not be used '
-                       'unless ghostscript-%s or later is '
-                       'installed on your system') % gs_req)
+                       'unless ghostscript-{} or later is '
+                       'installed on your system').format(gs_req))
 
     return flag
 
@@ -453,7 +454,7 @@ def _get_home():
         raise RuntimeError('please define environment variable $HOME')
 
 
-
+# PY3K TODO: Support new-style formatting in verbose.wrap
 get_home = verbose.wrap('$HOME=%s', _get_home, always=False)
 
 def _get_configdir():
@@ -469,7 +470,7 @@ def _get_configdir():
         if not os.path.exists(configdir):
             os.makedirs(configdir)
         if not _is_writable_dir(configdir):
-            raise RuntimeError('Could not write to MPLCONFIGDIR="%s"'%configdir)
+            raise RuntimeError('Could not write to MPLCONFIGDIR="{}"'.format(configdir))
         return configdir
 
     h = get_home()
@@ -477,14 +478,15 @@ def _get_configdir():
 
     if os.path.exists(p):
         if not _is_writable_dir(p):
-            raise RuntimeError("'%s' is not a writable dir; you must set %s/.matplotlib to be a writable dir.  You can also set environment variable MPLCONFIGDIR to any writable directory where you want matplotlib data stored "% (h, h))
+            raise RuntimeError("'{0}' is not a writable dir; you must set {0}/.matplotlib to be a writable dir.  You can also set environment variable MPLCONFIGDIR to any writable directory where you want matplotlib data stored ".format(h))
     else:
         if not _is_writable_dir(h):
-            raise RuntimeError("Failed to create %s/.matplotlib; consider setting MPLCONFIGDIR to a writable directory for matplotlib configuration data"%h)
+            raise RuntimeError("Failed to create {}/.matplotlib; consider setting MPLCONFIGDIR to a writable directory for matplotlib configuration data".format(h))
 
         os.mkdir(p)
 
     return p
+# PY3K TODO: Support new-style formatting in verbose.wrap
 get_configdir = verbose.wrap('CONFIGDIR=%s', _get_configdir, always=False)
 
 
@@ -532,6 +534,7 @@ def _get_data_path_cached():
         defaultParams['datapath'][0] = _get_data_path()
     return defaultParams['datapath'][0]
 
+# PY3K TODO: Support new-style formatting in verbose.wrap
 get_data_path = verbose.wrap('matplotlib data path %s', _get_data_path_cached,
                              always=False)
 
@@ -588,8 +591,8 @@ WARNING: Old rc filename ".matplotlibrc" found in working dir
         configdir = get_configdir()
         newname = os.path.join(configdir, 'matplotlibrc')
         print("""\
-WARNING: Old rc filename "%s" found and renamed to
-  new default rc file name "%s"."""%(oldname, newname), file=sys.stderr)
+WARNING: Old rc filename "{}" found and renamed to
+  new default rc file name "{}".""".format(oldname, newname), file=sys.stderr)
 
         shutil.move(oldname, newname)
 
@@ -644,33 +647,33 @@ class RcParams(dict):
 
     validate = dict([ (key, converter) for key, (default, converter) in \
                      defaultParams.iteritems() ])
-    msg_depr = "%s is deprecated and replaced with %s; please use the latter."
-    msg_depr_ignore = "%s is deprecated and ignored. Use %s"
+    msg_depr = "{} is deprecated and replaced with {}; please use the latter."
+    msg_depr_ignore = "{} is deprecated and ignored. Use {}"
 
     def __setitem__(self, key, val):
         try:
             if key in _deprecated_map:
                 alt = _deprecated_map[key]
-                warnings.warn(self.msg_depr % (key, alt))
+                warnings.warn(self.msg_depr.format(key, alt))
                 key = alt
             elif key in _deprecated_ignore_map:
                 alt = _deprecated_ignore_map[key]
-                warnings.warn(self.msg_depr_ignore % (key, alt))
+                warnings.warn(self.msg_depr_ignore.format(key, alt))
                 return
             cval = self.validate[key](val)
             dict.__setitem__(self, key, cval)
         except KeyError:
-            raise KeyError('%s is not a valid rc parameter.\
-See rcParams.keys() for a list of valid parameters.' % (key,))
+            raise KeyError('{} is not a valid rc parameter.\
+See rcParams.keys() for a list of valid parameters.'.format(key))
 
     def __getitem__(self, key):
         if key in _deprecated_map:
             alt = _deprecated_map[key]
-            warnings.warn(self.msg_depr % (key, alt))
+            warnings.warn(self.msg_depr.format(key, alt))
             key = alt
         elif key in _deprecated_ignore_map:
             alt = _deprecated_ignore_map[key]
-            warnings.warn(self.msg_depr_ignore % (key, alt))
+            warnings.warn(self.msg_depr_ignore.format(key, alt))
             key = alt
         return dict.__getitem__(self, key)
 
@@ -708,14 +711,15 @@ def rc_params(fail_on_error=False):
         if not strippedline: continue
         tup = strippedline.split(':',1)
         if len(tup) !=2:
-            warnings.warn('Illegal line #%d\n\t%s\n\tin file "%s"'%\
-                          (cnt, line, fname))
+            warnings.warn('Illegal line #{:d}\n\t{}\n\tin file "{}"'.format(
+                cnt, line, fname))
             continue
         key, val = tup
         key = key.strip()
         val = val.strip()
         if key in rc_temp:
-            warnings.warn('Duplicate key in file "%s", line #%d'%(fname,cnt))
+            warnings.warn('Duplicate key in file "{}", line #{:d}'.format(
+                fname,cnt))
         rc_temp[key] = (val, line, cnt)
 
     ret = RcParams([ (key, default) for key, (default, converter) in \
@@ -729,8 +733,9 @@ def rc_params(fail_on_error=False):
             else:
                 try: ret[key] = val # try to convert to proper type or skip
                 except Exception as msg:
-                    warnings.warn('Bad val "%s" on line #%d\n\t"%s"\n\tin file \
-"%s"\n\t%s' % (val, cnt, line, fname, msg))
+                    warnings.warn('Bad val "{}" on line #{:d}\n\t"{}"\n\tin file \
+"{}"\n\t{}'.format(
+                                      val, cnt, line, fname, msg))
 
     verbose.set_level(ret['verbose.level'])
     verbose.set_fileo(ret['verbose.fileo'])
@@ -742,18 +747,21 @@ def rc_params(fail_on_error=False):
             else:
                 try: ret[key] = val # try to convert to proper type or skip
                 except Exception as msg:
-                    warnings.warn('Bad val "%s" on line #%d\n\t"%s"\n\tin file \
-"%s"\n\t%s' % (val, cnt, line, fname, msg))
+                    warnings.warn('Bad val "{}" on line #{:d}\n\t"{}"\n\tin file \
+"{}"\n\t{}'.format(
+                                      val, cnt, line, fname, msg))
         elif key in _deprecated_ignore_map:
-            warnings.warn('%s is deprecated. Update your matplotlibrc to use %s instead.'% (key, _deprecated_ignore_map[key]))
+            warnings.warn(
+                '{} is deprecated. Update your matplotlibrc to use {} instead.'.format(
+                    key, _deprecated_ignore_map[key]))
 
         else:
             print("""
-Bad key "%s" on line %d in
-%s.
+Bad key "{}" on line {:d} in
+{}.
 You probably need to get an updated matplotlibrc file from
 http://matplotlib.sf.net/_static/matplotlibrc or from the matplotlib source
-distribution""" % (key, cnt, fname), file=sys.stderr)
+distribution""".format(key, cnt, fname), file=sys.stderr)
 
     if ret['datapath'] is None:
         ret['datapath'] = get_data_path()
@@ -762,12 +770,12 @@ distribution""" % (key, cnt, fname), file=sys.stderr)
         verbose.report("""
 *****************************************************************
 You have the following UNSUPPORTED LaTeX preamble customizations:
-%s
+{}
 Please do not ask for support with these customizations active.
 *****************************************************************
-"""% '\n'.join(ret['text.latex.preamble']), 'helpful')
+""".format('\n'.join(ret['text.latex.preamble'])), 'helpful')
 
-    verbose.report('loaded rc file %s'%fname)
+    verbose.report('loaded rc file {}'.format(fname))
 
     return ret
 
@@ -864,12 +872,13 @@ def rc(group, **kwargs):
     for g in group:
         for k,v in kwargs.iteritems():
             name = aliases.get(k) or k
-            key = '%s.%s' % (g, name)
+            key = '{}.{}'.format(g, name)
             try:
                 rcParams[key] = v
             except KeyError:
-                raise KeyError('Unrecognized key "%s" for group "%s" and name "%s"' %
-                               (key, g, name))
+                raise KeyError(
+                    'Unrecognized key "{}" for group "{}" and name "{}"'.format(
+                        key, g, name))
 
 def rcdefaults():
     """
@@ -1007,8 +1016,8 @@ def test(verbosity=0):
 
 test.__test__ = False # nose: this function is not a test
 
-verbose.report('matplotlib version %s'%__version__)
-verbose.report('verbose.level %s'%verbose.level)
-verbose.report('interactive is %s'%rcParams['interactive'])
-verbose.report('platform is %s'%sys.platform)
-verbose.report('loaded modules: %s'%sys.modules.iterkeys(), 'debug')
+verbose.report('matplotlib version {}'.format(__version__))
+verbose.report('verbose.level {}'.format(verbose.level))
+verbose.report('interactive is {}'.format(rcParams['interactive']))
+verbose.report('platform is {}'.format(sys.platform))
+verbose.report('loaded modules: {}'.format(sys.modules.iterkeys()), 'debug')

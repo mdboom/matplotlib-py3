@@ -59,7 +59,7 @@ def parasite_axes_class_factory(axes_class=None):
         def _get_base_axes_attr(self, attrname):
             return getattr(axes_class, attrname)
 
-        new_class = type("%sParasite" % (axes_class.__name__),
+        new_class = type("{}Parasite".format(axes_class.__name__),
                          (ParasiteAxesBase, axes_class),
                          {'_get_base_axes_attr': _get_base_axes_attr})
         _parasite_axes_classes[axes_class] = new_class
@@ -100,7 +100,7 @@ class ParasiteAxesAuxTransBase:
 
     def set_viewlim_mode(self, mode):
         if mode not in [None, "equal", "transform"]:
-            raise ValueError("Unknown mode : %s" % (mode,))
+            raise ValueError("Unknown mode : {}".format(mode))
         else:
             self._viewlim_mode = mode
 
@@ -118,7 +118,7 @@ class ParasiteAxesAuxTransBase:
         elif mode == "transform":
             self.axes.viewLim.set(viewlim.transformed(self.transAux.inverted()))
         else:
-            raise ValueError("Unknown mode : %s" % (self._viewlim_mode,))
+            raise ValueError("Unknown mode : {}".format(self._viewlim_mode))
 
 
     def _pcolor(self, method_name, *XYC, **kwargs):
@@ -210,7 +210,7 @@ def parasite_axes_auxtrans_class_factory(axes_class=None):
 
     new_class = _parasite_axes_auxtrans_classes.get(parasite_axes_class)
     if new_class is None:
-        new_class = type("%sParasiteAuxTrans" % (parasite_axes_class.__name__),
+        new_class = type("{}ParasiteAuxTrans".format(parasite_axes_class.__name__),
                          (ParasiteAxesAuxTransBase, parasite_axes_class),
                          {'_parasite_axes_class': parasite_axes_class,
                          'name': 'parasite_axes'})
@@ -459,7 +459,7 @@ def host_axes_class_factory(axes_class=None):
         def _get_base_axes_attr(self, attrname):
             return getattr(axes_class, attrname)
 
-        new_class = type("%sHostAxes" % (axes_class.__name__),
+        new_class = type("{}HostAxes".format(axes_class.__name__),
                          (HostAxesBase, axes_class),
                          {'_get_base_axes_attr': _get_base_axes_attr,
                           '_get_base_axes': _get_base_axes})

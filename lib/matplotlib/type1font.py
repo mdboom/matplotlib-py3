@@ -73,8 +73,8 @@ class Type1Font(object):
         data = ''
         while len(rawdata) > 0:
             if not rawdata.startswith(chr(128)):
-                raise RuntimeError('Broken pfb file (expected byte 128, got %d)' % \
-                    ord(rawdata[0]))
+                raise RuntimeError('Broken pfb file (expected byte 128, got {:d})'.format(
+                    ord(rawdata[0])))
             type = ord(rawdata[1])
             if type in (1,2):
                 length, = struct.unpack('<i', rawdata[2:6])
@@ -84,12 +84,12 @@ class Type1Font(object):
             if type == 1:       # ASCII text: include verbatim
                 data += segment
             elif type == 2:     # binary data: encode in hexadecimal
-                data += ''.join(['%02x' % ord(char)
-                                      for char in segment])
+                data += ''.join(['{:02x}'.format(ord(char))
+                                 for char in segment])
             elif type == 3:     # end of file
                 break
             else:
-                raise RuntimeError('Unknown segment type %d in pfb file' % type)
+                raise RuntimeError('Unknown segment type {:d} in pfb file'.format(type))
 
         return data
 

@@ -24,10 +24,10 @@ import axis3d
 def sensible_format_data(self, value):
     """Used to generate more comprehensible numbers in status bar"""
     if abs(value) > 1e4 or abs(value)<1e-3:
-        s = '%1.4e' % value
+        s = '{:1.4e}'.format(value)
         return self._formatSciNotation(s)
     else:
-        return '%4.3f' % value
+        return '{:4.3f}'.format(value)
 
 def unit_bbox():
     box = Bbox(np.array([[0, 0], [1, 1]]))
@@ -298,7 +298,7 @@ class Axes3D(Axes):
         Note that minor ticks are not supported at this time.
         """
         return self.w_zaxis.set_ticks(*args, **kwargs)
-        
+
     def get_zticks(self, *args, **kwargs):
         """
         Get the z-axis tick objects.
@@ -517,7 +517,8 @@ class Axes3D(Axes):
             return ''
 
         if self.button_pressed in self._rotate_btn:
-            return 'azimuth=%d deg, elevation=%d deg ' % (self.azim, self.elev)
+            return 'azimuth={:.0f} deg, elevation={:.0f} deg '.format(
+                self.azim, self.elev)
             # ignore xd and yd and display angles instead
 
         p = (xd, yd)
@@ -544,7 +545,7 @@ class Axes3D(Axes):
         xs = self.format_xdata(x)
         ys = self.format_ydata(y)
         zs = self.format_ydata(z)
-        return 'x=%s, y=%s, z=%s' % (xs, ys, zs)
+        return 'x={}, y={}, z={}'.format(xs, ys, zs)
 
     def _on_move(self, event):
         """Mouse moving
@@ -765,7 +766,7 @@ class Axes3D(Axes):
         #colset contains the data for coloring: either average z or the facecolor
         colset = []
         for rs in xrange(0, rows-1, rstride):
-            for cs in xrange(0, cols-1, cstride):  
+            for cs in xrange(0, cols-1, cstride):
                 ps = []
                 for a in (X, Y, Z) :
                     ztop = a[rs,cs:min(cols, cs+cstride+1)]
@@ -1396,7 +1397,7 @@ def get_test_data(delta=0.05):
 
 
 ########################################################
-# Register Axes3D as a 'projection' object available 
+# Register Axes3D as a 'projection' object available
 # for use just like any other axes
 ########################################################
 import matplotlib.projections as proj

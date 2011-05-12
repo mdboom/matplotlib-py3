@@ -107,21 +107,21 @@ def _process_plot_format(fmt):
         if c in mlines.lineStyles:
             if linestyle is not None:
                 raise ValueError(
-                    'Illegal format string "%s"; two linestyle symbols' % fmt)
+                    'Illegal format string "{}"; two linestyle symbols'.format(fmt))
             linestyle = c
         elif c in mlines.lineMarkers:
             if marker is not None:
                 raise ValueError(
-                    'Illegal format string "%s"; two marker symbols' % fmt)
+                    'Illegal format string "{}"; two marker symbols'.format(fmt))
             marker = c
         elif c in mcolors.colorConverter.colors:
             if color is not None:
                 raise ValueError(
-                    'Illegal format string "%s"; two color symbols' % fmt)
+                    'Illegal format string "{}"; two color symbols'.format(fmt))
             color = c
         else:
             raise ValueError(
-                'Unrecognized character %c in format string' % c)
+                'Unrecognized character {:c} in format string'.format(c))
 
     if linestyle is None and marker is None:
         linestyle = rcParams['lines.linestyle']
@@ -195,9 +195,9 @@ class _process_plot_var_args:
     def set_lineprops(self, line, **kwargs):
         assert self.command == 'plot', 'set_lineprops only works with "plot"'
         for key, val in kwargs.items():
-            funcName = "set_%s"%key
+            funcName = "set_{}".format(key)
             if not hasattr(line,funcName):
-                raise TypeError, 'There is no line property "%s"'%key
+                raise TypeError('There is no line property "{}"'.format(key))
             func = getattr(line,funcName)
             func(val)
 
@@ -206,7 +206,7 @@ class _process_plot_var_args:
         for key, val in kwargs.items():
             funcName = "set_%s"%key
             if not hasattr(fill_poly,funcName):
-                raise TypeError, 'There is no patch property "%s"'%key
+                raise TypeError('There is no patch property "{}"'.format(key))
             func = getattr(fill_poly,funcName)
             func(val)
 
@@ -354,7 +354,7 @@ class Axes(martist.Artist):
     _shared_y_axes = cbook.Grouper()
 
     def __str__(self):
-        return "Axes(%g,%g;%gx%g)" % tuple(self._position.bounds)
+        return "Axes({:g},{:g};{:g}x{:g})".format(*self._position.bounds)
     def __init__(self, fig, rect,
                  axisbg = None, # defaults to rc axes.facecolor
                  frameon = True,
@@ -406,16 +406,16 @@ class Axes(martist.Artist):
                              visible
           *xlabel*           the xlabel
           *xlim*             (*xmin*, *xmax*) view limits
-          *xscale*           [%(scale)s]
+          *xscale*           [{scale}]
           *xticklabels*      sequence of strings
           *xticks*           sequence of floats
           *ylabel*           the ylabel strings
           *ylim*             (*ymin*, *ymax*) view limits
-          *yscale*           [%(scale)s]
+          *yscale*           [{scale}]
           *yticklabels*      sequence of strings
           *yticks*           sequence of floats
           ================   =========================================
-        """ % {'scale': ' | '.join([repr(x) for x in mscale.get_scale_names()])}
+        """.format(scale=' | '.join([repr(x) for x in mscale.get_scale_names()])}
         martist.Artist.__init__(self)
         if isinstance(rect, mtransforms.Bbox):
             self._position = rect
@@ -1056,8 +1056,9 @@ class Axes(martist.Artist):
         if anchor in mtransforms.Bbox.coefs.keys() or len(anchor) == 2:
             self._anchor = anchor
         else:
-            raise ValueError('argument must be among %s' %
-                                ', '.join(mtransforms.BBox.coefs.keys()))
+            raise ValueError(
+                'argument must be among {}'.format(
+                ', '.join(mtransforms.BBox.coefs.keys())))
 
     def get_data_ratio(self):
         """
@@ -1110,8 +1111,8 @@ class Axes(martist.Artist):
                     (xscale == "log" and yscale == "linear"):
                 if aspect is not "auto":
                     warnings.warn(
-                        'aspect is not supported for Axes with xscale=%s, yscale=%s' \
-                        % (xscale, yscale))
+                        'aspect is not supported for Axes with xscale={}, yscale={}'.format(
+                            xscale, yscale))
                     aspect = "auto"
             else: # some custom projections have their own scales.
                 pass
@@ -1268,7 +1269,7 @@ class Axes(martist.Artist):
 
             else:
                 raise ValueError('Unrecognized string %s to axis; '
-                                 'try on or off' % s)
+                                 'try on or off'.format(s))
             xmin, xmax = self.get_xlim()
             ymin, ymax = self.get_ylim()
             return xmin, xmax, ymin, ymax
@@ -1404,7 +1405,7 @@ class Axes(martist.Artist):
         '''
         label = collection.get_label()
         if not label:
-            collection.set_label('_collection%d'%len(self.collections))
+            collection.set_label('_collection{:d}'.format(len(self.collections)))
         self.collections.append(collection)
         self._set_artist_props(collection)
 
@@ -1430,7 +1431,7 @@ class Axes(martist.Artist):
 
         self._update_line_limits(line)
         if not line.get_label():
-            line.set_label('_line%d'%len(self.lines))
+            line.set_label('_line{:d}'.format(len(self.lines)))
         self.lines.append(line)
         line._remove_method = lambda h: self.lines.remove(h)
         return line
@@ -1505,7 +1506,7 @@ class Axes(martist.Artist):
         '''
         label = container.get_label()
         if not label:
-            container.set_label('_container%d'%len(self.containers))
+            container.set_label('_container{:d}'.format(len(self.containers)))
         self.containers.append(container)
         container.set_remove_method(lambda h: self.containers.remove(container))
         return container
@@ -2061,7 +2062,7 @@ class Axes(martist.Artist):
 
         Valid :class:`~matplotlib.lines.Line2D` kwargs are
 
-        %(Line2D)s
+        {Line2D}
 
         """
         if len(kwargs):
@@ -2127,7 +2128,7 @@ class Axes(martist.Artist):
         elif style == '':
             sb = None
         else:
-            raise ValueError, "%s is not a valid style value"
+            raise ValueError("{} is not a valid style value".format(style))
         try:
             if sb is not None:
                 if axis == 'both' or axis == 'x':
@@ -2392,7 +2393,7 @@ class Axes(martist.Artist):
         if 'xmax' in kw:
             right = kw.pop('xmax')
         if kw:
-            raise ValueError("unrecognized kwargs: %s" % kw.keys())
+            raise ValueError("unrecognized kwargs: {}".format(kw.keys()))
 
         if right is None and iterable(left):
             left,right = left
@@ -2410,7 +2411,7 @@ class Axes(martist.Artist):
         if left==right:
             warnings.warn(('Attempting to set identical left==right results\n'
                    + 'in singular transformations; automatically expanding.\n'
-                   + 'left=%s, right=%s') % (left, right))
+                   + 'left={}, right={}').format(left, right))
         left, right = mtransforms.nonsingular(left, right, increasing=False)
         left, right = self.xaxis.limit_range_for_scale(left, right)
 
@@ -2432,7 +2433,7 @@ class Axes(martist.Artist):
         return left, right
 
     def get_xscale(self):
-        'return the xaxis scale string: %s' % (
+        'return the xaxis scale string: {}'.format(
             ", ".join(mscale.get_scale_names()))
         return self.xaxis.get_scale()
 
@@ -2443,12 +2444,12 @@ class Axes(martist.Artist):
 
           set_xscale(value)
 
-        Set the scaling of the x-axis: %(scale)s
+        Set the scaling of the x-axis: {scale}
 
-        ACCEPTS: [%(scale)s]
+        ACCEPTS: [{scale}]
 
         Different kwargs are accepted, depending on the scale:
-        %(scale_docs)s
+        {scale_docs}
         """
         self.xaxis.set_scale(value, **kwargs)
         self.autoscale_view(scaley=False)
@@ -2493,7 +2494,7 @@ class Axes(martist.Artist):
 
         *kwargs* set the :class:`~matplotlib.text.Text` properties.
         Valid properties are
-        %(Text)s
+        {Text}
 
         ACCEPTS: sequence of strings
         """
@@ -2594,7 +2595,7 @@ class Axes(martist.Artist):
         if 'ymax' in kw:
             top = kw.pop('ymax')
         if kw:
-            raise ValueError("unrecognized kwargs: %s" % kw.keys())
+            raise ValueError("unrecognized kwargs: {}".format(kw.keys()))
 
         if top is None and iterable(bottom):
             bottom,top = bottom
@@ -2612,7 +2613,7 @@ class Axes(martist.Artist):
         if bottom==top:
             warnings.warn(('Attempting to set identical bottom==top results\n'
                    + 'in singular transformations; automatically expanding.\n'
-                   + 'bottom=%s, top=%s') % (bottom, top))
+                   + 'bottom={}, top={}').format(bottom, top))
 
         bottom, top = mtransforms.nonsingular(bottom, top, increasing=False)
         bottom, top = self.yaxis.limit_range_for_scale(bottom, top)
@@ -2635,7 +2636,7 @@ class Axes(martist.Artist):
         return bottom, top
 
     def get_yscale(self):
-        'return the xaxis scale string: %s' % (
+        'return the xaxis scale string: {}'.format(
                 ", ".join(mscale.get_scale_names()))
         return self.yaxis.get_scale()
 
@@ -2646,12 +2647,12 @@ class Axes(martist.Artist):
 
           set_yscale(value)
 
-        Set the scaling of the y-axis: %(scale)s
+        Set the scaling of the y-axis: {scale}
 
-        ACCEPTS: [%(scale)s]
+        ACCEPTS: [{scale}]
 
         Different kwargs are accepted, depending on the scale:
-        %(scale_docs)s
+        {scale_docs}
         """
         self.yaxis.set_scale(value, **kwargs)
         self.autoscale_view(scalex=False)
@@ -2701,7 +2702,7 @@ class Axes(martist.Artist):
 
         *kwargs* set :class:`~matplotlib.text.Text` properties for the labels.
         Valid properties are
-        %(Text)s
+        {Text}
 
         ACCEPTS: sequence of strings
         """
@@ -2758,7 +2759,7 @@ class Axes(martist.Artist):
             ys = '???'
         else:
             ys = self.format_ydata(y)
-        return  'x=%s y=%s'%(xs,ys)
+        return  'x={} y={}'.format(xs,ys)
 
     #### Interactive manipulation
 
@@ -3089,7 +3090,7 @@ class Axes(martist.Artist):
         Set the title for the axes.
 
         kwargs are Text properties:
-        %(Text)s
+        {Text}
 
         ACCEPTS: str
 
@@ -3129,7 +3130,7 @@ class Axes(martist.Artist):
         *labelpad* is the spacing in points between the label and the x-axis
 
         Valid kwargs are Text properties:
-        %(Text)s
+        {Text}
         ACCEPTS: str
 
         .. seealso::
@@ -3159,7 +3160,7 @@ class Axes(martist.Artist):
         *labelpad* is the spacing in points between the label and the y-axis
 
         Valid kwargs are Text properties:
-        %(Text)s
+        {Text}
         ACCEPTS: str
 
         .. seealso::
@@ -3207,16 +3208,16 @@ class Axes(martist.Artist):
                  verticalalignment='center',
                  transform = ax.transAxes)
 
-       You can put a rectangular box around the text instance (eg. to
-       set a background color) by using the keyword *bbox*.  *bbox* is
-       a dictionary of :class:`matplotlib.patches.Rectangle`
-       properties.  For example::
+        You can put a rectangular box around the text instance (eg. to
+        set a background color) by using the keyword *bbox*.  *bbox*
+        is a dictionary of :class:`matplotlib.patches.Rectangle`
+        properties.  For example::
 
-         text(x, y, s, bbox=dict(facecolor='red', alpha=0.5))
+            text(x, y, s, bbox=dict(facecolor='red', alpha=0.5))
 
-       Valid kwargs are :class:`matplotlib.text.Text` properties:
+        Valid kwargs are :class:`matplotlib.text.Text` properties:
 
-       %(Text)s
+        {Text}
         """
         default = {
             'verticalalignment' : 'baseline',
@@ -3261,7 +3262,7 @@ class Axes(martist.Artist):
 
         Keyword arguments:
 
-        %(Annotation)s
+        {Annotation}
 
         .. plot:: mpl_examples/pylab_examples/annotation_demo2.py
         """
@@ -3312,7 +3313,7 @@ class Axes(martist.Artist):
         Valid kwargs are :class:`~matplotlib.lines.Line2D` properties,
         with the exception of 'transform':
 
-        %(Line2D)s
+        {Line2D}
 
         .. seealso::
 
@@ -3377,7 +3378,7 @@ class Axes(martist.Artist):
         Valid kwargs are :class:`~matplotlib.lines.Line2D` properties,
         with the exception of 'transform':
 
-        %(Line2D)s
+        {Line2D}
 
         .. seealso::
 
@@ -3437,7 +3438,7 @@ class Axes(martist.Artist):
 
         Valid kwargs are :class:`~matplotlib.patches.Polygon` properties:
 
-        %(Polygon)s
+        {Polygon}
 
         **Example:**
 
@@ -3494,7 +3495,7 @@ class Axes(martist.Artist):
         Valid kwargs are :class:`~matplotlib.patches.Polygon`
         properties:
 
-        %(Polygon)s
+        {Polygon}
 
         .. seealso::
 
@@ -3632,7 +3633,7 @@ class Axes(martist.Artist):
 
         kwargs are :class:`~matplotlib.collections.LineCollection` properties:
 
-        %(LineCollection)s
+        {LineCollection}
         """
 
         if kwargs.get('fmt') is not None:
@@ -3799,7 +3800,7 @@ class Axes(martist.Artist):
 
         The kwargs are :class:`~matplotlib.lines.Line2D` properties:
 
-        %(Line2D)s
+        {Line2D}
 
         kwargs *scalex* and *scaley*, if defined, are passed on to
         :meth:`~matplotlib.axes.Axes.autoscale_view` to determine
@@ -3864,7 +3865,7 @@ class Axes(martist.Artist):
 
         Valid kwargs are :class:`~matplotlib.lines.Line2D` properties:
 
-        %(Line2D)s
+        {Line2D}
 
         .. seealso::
 
@@ -3922,7 +3923,7 @@ class Axes(martist.Artist):
         The remaining valid kwargs are
         :class:`~matplotlib.lines.Line2D` properties:
 
-        %(Line2D)s
+        {Line2D}
 
         **Example:**
 
@@ -3981,7 +3982,7 @@ class Axes(martist.Artist):
         The remaining valid kwargs are
         :class:`~matplotlib.lines.Line2D` properties:
 
-        %(Line2D)s
+        {Line2D}
 
         .. seealso::
 
@@ -4032,7 +4033,7 @@ class Axes(martist.Artist):
         The remaining valid kwargs are
         :class:`~matplotlib.lines.Line2D` properties:
 
-        %(Line2D)s
+        {Line2D}
 
         .. seealso::
 
@@ -4186,7 +4187,7 @@ class Axes(martist.Artist):
 
         if maxlags >= Nx or maxlags < 1:
             raise ValueError('maglags must be None or strictly '
-                             'positive < %d'%Nx)
+                             'positive < {:d}'.format(Nx))
 
         lags = np.arange(-maxlags,maxlags+1)
         c = c[Nx-1-maxlags:Nx+maxlags]
@@ -4549,7 +4550,7 @@ class Axes(martist.Artist):
 
         Other optional kwargs:
 
-        %(Rectangle)s
+        {Rectangle}
 
         **Example:** A stacked bar chart.
 
@@ -4625,7 +4626,7 @@ class Axes(martist.Artist):
             if len(height) == 1:
                 height *= nbars
         else:
-            raise ValueError, 'invalid orientation: %s' % orientation
+            raise ValueError('invalid orientation: {}'.format(orientation))
 
         if len(linewidth) < nbars:
             linewidth *= nbars
@@ -4650,13 +4651,10 @@ class Axes(martist.Artist):
 
         # FIXME: convert the following to proper input validation
         # raising ValueError; don't use assert for this.
-        assert len(left)==nbars, "incompatible sizes: argument 'left' must be length %d or scalar" % nbars
-        assert len(height)==nbars, ("incompatible sizes: argument 'height' must be length %d or scalar" %
-                                    nbars)
-        assert len(width)==nbars, ("incompatible sizes: argument 'width' must be length %d or scalar" %
-                                   nbars)
-        assert len(bottom)==nbars, ("incompatible sizes: argument 'bottom' must be length %d or scalar" %
-                                    nbars)
+        assert len(left)==nbars, "incompatible sizes: argument 'left' must be length {:d} or scalar".format(nbars)
+        assert len(height)==nbars, ("incompatible sizes: argument 'height' must be length {:d} or scalar".format(nbars)
+        assert len(width)==nbars, ("incompatible sizes: argument 'width' must be length {:d} or scalar".format(nbars))
+        assert len(bottom)==nbars, ("incompatible sizes: argument 'bottom' must be length {:d} or scalar".format(nbars))
 
         patches = []
 
@@ -4683,7 +4681,7 @@ class Axes(martist.Artist):
                 bottom = [bottom[i] - height[i]/2. for i in xrange(len(bottom))]
 
         else:
-            raise ValueError, 'invalid alignment: %s' % align
+            raise ValueError, 'invalid alignment: {}'.format(align)
 
         args = zip(left, bottom, width, height, color, edgecolor, linewidth)
         for l, b, w, h, c, e, lw in args:
@@ -4817,7 +4815,7 @@ class Axes(martist.Artist):
 
         other optional kwargs:
 
-        %(Rectangle)s
+        {Rectangle}
         """
 
         patches = self.bar(left=left, height=height, width=width, bottom=bottom,
@@ -4847,7 +4845,7 @@ class Axes(martist.Artist):
         :class:`matplotlib.collections.BrokenBarHCollection`
         properties:
 
-        %(BrokenBarHCollection)s
+        {BrokenBarHCollection}
 
         these can either be a single argument, ie::
 
@@ -5131,7 +5129,7 @@ class Axes(martist.Artist):
 
         valid kwargs for the marker properties are
 
-        %(Line2D)s
+        {Line2D}
 
         Returns (*plotline*, *caplines*, *barlinecols*):
 
@@ -5719,7 +5717,7 @@ class Axes(martist.Artist):
         Here are the standard descriptions of all the
         :class:`~matplotlib.collections.Collection` kwargs:
 
-        %(Collection)s
+        {Collection}
 
         A :class:`~matplotlib.collections.Collection` instance is
         returned.
@@ -6020,7 +6018,7 @@ class Axes(martist.Artist):
         Here are the standard descriptions of all the
         :class:`~matplotlib.collections.Collection` kwargs:
 
-        %(Collection)s
+        {Collection}
 
         The return value is a
         :class:`~matplotlib.collections.PolyCollection` instance; use
@@ -6353,7 +6351,7 @@ class Axes(martist.Artist):
         *y* + *dy*).
 
         Optional kwargs control the arrow properties:
-        %(FancyArrow)s
+        {FancyArrow}
 
         **Example:**
 
@@ -6388,7 +6386,7 @@ class Axes(martist.Artist):
     @docstring.dedent_interpd
     def barbs(self, *args, **kw):
         """
-        %(barbs_doc)s
+        {barbs_doc}
         **Example:**
 
         .. plot:: mpl_examples/pylab_examples/barb_demo.py
@@ -6432,7 +6430,7 @@ class Axes(martist.Artist):
 
         kwargs control the Polygon properties:
 
-        %(Polygon)s
+        {Polygon}
 
         **Example:**
 
@@ -6485,7 +6483,7 @@ class Axes(martist.Artist):
 
         kwargs control the Polygon properties:
 
-        %(PolyCollection)s
+        {PolyCollection}
 
         .. plot:: mpl_examples/pylab_examples/fill_between_demo.py
 
@@ -6616,7 +6614,7 @@ class Axes(martist.Artist):
 
         kwargs control the Polygon properties:
 
-        %(PolyCollection)s
+        {PolyCollection}
 
         .. plot:: mpl_examples/pylab_examples/fill_betweenx_demo.py
 
@@ -6793,7 +6791,7 @@ class Axes(martist.Artist):
 
         Additional kwargs are :class:`~matplotlib.artist.Artist` properties:
 
-        %(Artist)s
+        {Artist}
 
         **Example:**
 
@@ -6842,7 +6840,7 @@ class Axes(martist.Artist):
             X, Y, C = args
         else:
             raise TypeError(
-                'Illegal arguments to %s; see help(%s)' % (funcname, funcname))
+                'Illegal arguments to {0}; see help({0})'.format(funcname))
 
         Nx = X.shape[-1]
         Ny = Y.shape[0]
@@ -6854,8 +6852,8 @@ class Axes(martist.Artist):
             Y = y.repeat(Nx, axis=1)
         if X.shape != Y.shape:
             raise TypeError(
-                'Incompatible X, Y inputs to %s; see help(%s)' % (
-                funcname, funcname))
+                'Incompatible X, Y inputs to {0}; see help({0})'.format(
+                funcname))
         return X, Y, C
 
     @docstring.dedent_interpd
@@ -6980,7 +6978,7 @@ class Axes(martist.Artist):
         kwargs can be used to control the
         :class:`~matplotlib.collection.PolyCollection` properties:
 
-        %(PolyCollection)s
+        {PolyCollection}
 
         Note: the default *antialiaseds* is False if the default
         *edgecolors*="none" is used.  This eliminates artificial lines
@@ -7144,7 +7142,7 @@ class Axes(martist.Artist):
         :class:`matplotlib.collections.QuadMesh`
         properties:
 
-        %(QuadMesh)s
+        {QuadMesh}
 
         .. seealso::
 
@@ -7426,7 +7424,7 @@ class Axes(martist.Artist):
         kwargs control the :class:`~matplotlib.table.Table`
         properties:
 
-        %(Table)s
+        {Table}
         """
         return mtable.table(self, **kwargs)
 
@@ -7618,7 +7616,7 @@ class Axes(martist.Artist):
         kwargs are used to update the properties of the
         :class:`~matplotlib.patches.Patch` instances returned by *hist*:
 
-        %(Patch)s
+        {Patch}
 
         **Example:**
 
@@ -7636,14 +7634,14 @@ class Axes(martist.Artist):
         # Validate string inputs here so we don't have to clutter
         # subsequent code.
         if histtype not in ['bar', 'barstacked', 'step', 'stepfilled']:
-            raise ValueError("histtype %s is not recognized" % histtype)
+            raise ValueError("histtype {} is not recognized".format(histtype))
 
         if align not in ['left', 'mid', 'right']:
-            raise ValueError("align kwarg %s is not recognized" % align)
+            raise ValueError("align kwarg {} is not recognized".format(align))
 
         if orientation not in [ 'horizontal', 'vertical']:
             raise ValueError(
-                "orientation kwarg %s is not recognized" % orientation)
+                "orientation kwarg {} is not recognized".format(orientation))
 
 
         if kwargs.get('width') is not None:
@@ -7664,7 +7662,7 @@ class Axes(martist.Artist):
                 raise ValueError("x must be 1D or 2D")
             if x.shape[1] < x.shape[0]:
                 warnings.warn('2D hist input should be nsamples x nvariables;\n '
-                    'this looks transposed (shape is %d x %d)' % x.shape[::-1])
+                    'this looks transposed (shape is {:d} x {:d})'.format(*x.shape[::-1]))
         else:
             # multiple hist with data of different length
             x = [np.asarray(xi) for xi in x]
@@ -7923,7 +7921,7 @@ class Axes(martist.Artist):
         scaling to correct for power loss due to windowing.  *Fs* is the
         sampling frequency.
 
-        %(PSD)s
+        {PSD}
 
           *Fc*: integer
             The center frequency of *x* (defaults to 0), which offsets
@@ -7943,7 +7941,7 @@ class Axes(martist.Artist):
 
         kwargs control the :class:`~matplotlib.lines.Line2D` properties:
 
-        %(Line2D)s
+        {Line2D}
 
         **Example:**
 
@@ -7962,7 +7960,7 @@ class Axes(martist.Artist):
 
         self.plot(freqs, 10*np.log10(pxx), **kwargs)
         self.set_xlabel('Frequency')
-        self.set_ylabel('Power Spectral Density (%s)' % psd_units)
+        self.set_ylabel('Power Spectral Density ({})'.format(psd_units))
         self.grid(True)
         vmin, vmax = self.viewLim.intervaly
         intv = vmax-vmin
@@ -7998,7 +7996,7 @@ class Axes(martist.Artist):
         (complex valued), and :math:`10\log_{10}|P_{xy}|` is
         plotted.
 
-        %(PSD)s
+        {PSD}
 
           *Fc*: integer
             The center frequency of *x* (defaults to 0), which offsets
@@ -8012,7 +8010,7 @@ class Axes(martist.Artist):
 
         kwargs control the Line2D properties:
 
-        %(Line2D)s
+        {Line2D}
 
         **Example:**
 
@@ -8062,7 +8060,7 @@ class Axes(martist.Artist):
 
           C_{xy} = \\frac{|P_{xy}|^2}{P_{xx}P_{yy}}
 
-        %(PSD)s
+        {PSD}
 
           *Fc*: integer
             The center frequency of *x* (defaults to 0), which offsets
@@ -8083,7 +8081,7 @@ class Axes(martist.Artist):
         kwargs control the :class:`~matplotlib.lines.Line2D`
         properties of the coherence plot:
 
-        %(Line2D)s
+        {Line2D}
 
         **Example:**
 
@@ -8120,7 +8118,7 @@ class Axes(martist.Artist):
         segment, and the amount of overlap of each segment is
         specified with *noverlap*.
 
-        %(PSD)s
+        {PSD}
 
           *Fc*: integer
             The center frequency of *x* (defaults to 0), which offsets
@@ -8452,7 +8450,7 @@ class SubplotBase:
                 self._subplotspec = GridSpec(rows, cols)[int(num)-1]
                 # num - 1 for converting from MATLAB to python indexing
         else:
-            raise ValueError('Illegal argument(s) to subplot: %s' % (args,))
+            raise ValueError('Illegal argument(s) to subplot: {}'.format(args))
 
         self.update_params()
 
@@ -8531,7 +8529,7 @@ def subplot_class_factory(axes_class=None):
 
     new_class = _subplot_classes.get(axes_class)
     if new_class is None:
-        new_class = type("%sSubplot" % (axes_class.__name__),
+        new_class = type("{}Subplot".format(axes_class.__name__),
                          (SubplotBase, axes_class),
                          {'_axes_class': axes_class})
         _subplot_classes[axes_class] = new_class

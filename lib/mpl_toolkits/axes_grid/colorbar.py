@@ -48,6 +48,8 @@ make_axes_kw_doc = '''
 
 '''
 
+# PY3K TODO: Support new-style formatting in format kwarg
+
 colormap_kw_doc = '''
 
     ===========   ====================================================
@@ -127,9 +129,9 @@ keyword arguments:
 Additional keyword arguments are of two kinds:
 
   axes properties:
-%s
+{}
   colorbar properties:
-%s
+{}
 
 If *mappable* is a :class:`~matplotlib.contours.ContourSet`, its *extend*
 kwarg is included automatically.
@@ -155,7 +157,7 @@ The transData of the *cax* is adjusted so that the limits in the
 longest axis actually corresponds to the limits in colorbar range. On
 the other hand, the shortest axis has a data limits of [1,2], whose
 unconventional value is to prevent underflow when log scale is used.
-''' % (make_axes_kw_doc, colormap_kw_doc)
+'''.format(make_axes_kw_doc, colormap_kw_doc)
 
 docstring.interpd.update(colorbar_doc=colorbar_doc)
 
@@ -756,7 +758,7 @@ def make_axes(parent, **kw):
         *orientation*
             'vertical'  or 'horizontal'
 
-    %s
+    {}
 
     All but the first of these are stripped from the input kw set.
 
@@ -795,7 +797,7 @@ def colorbar(mappable, cax=None, ax=None, **kw):
     Create a colorbar for a ScalarMappable instance.
 
     Documentation for the pylab thin wrapper:
-    %(colorbar_doc)s
+    {colorbar_doc}
     """
     import matplotlib.pyplot as plt
     if ax is None:

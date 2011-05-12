@@ -44,7 +44,7 @@ def math_directive(name, arguments, options, content, lineno,
 
 # This uses mathtext to render the expression
 def latex2png(latex, filename, fontset='cm'):
-    latex = "$%s$" % latex
+    latex = "${}$".format(latex)
     orig_fontset = rcParams['mathtext.fontset']
     rcParams['mathtext.fontset'] = fontset
     if os.path.exists(filename):
@@ -53,7 +53,7 @@ def latex2png(latex, filename, fontset='cm'):
         try:
             depth = mathtext_parser.to_png(filename, latex, dpi=100)
         except:
-            warnings.warn("Could not render math expression %s" % latex,
+            warnings.warn("Could not render math expression {}".format(latex),
                           Warning)
             depth = 0
     rcParams['mathtext.fontset'] = orig_fontset
@@ -65,12 +65,12 @@ def latex2png(latex, filename, fontset='cm'):
 def latex2html(node, source):
     inline = isinstance(node.parent, nodes.TextElement)
     latex = node['latex']
-    name = 'math-%s' % md5(latex).hexdigest()[-10:]
+    name = 'math-{}'.format(md5(latex).hexdigest()[-10:])
 
     destdir = os.path.join(setup.app.builder.outdir, '_images', 'mathmpl')
     if not os.path.exists(destdir):
         os.makedirs(destdir)
-    dest = os.path.join(destdir, '%s.png' % name)
+    dest = os.path.join(destdir, '{}.png'.format(name))
     path = os.path.join(setup.app.builder.imgpath, 'mathmpl')
 
     depth = latex2png(latex, dest, node['fontset'])
@@ -80,11 +80,11 @@ def latex2html(node, source):
     else:
         cls = 'class="center" '
     if inline and depth != 0:
-        style = 'style="position: relative; bottom: -%dpx"' % (depth + 1)
+        style = 'style="position: relative; bottom: -{:d}px"'.format(int(depth + 1))
     else:
         style = ''
 
-    return '<img src="%s/%s.png" %s%s/>' % (path, name, cls, style)
+    return '<img src="{}/{}.png" {}{}/>'.format(path, name, cls, style)
 
 def setup(app):
     setup.app = app
@@ -103,7 +103,7 @@ def setup(app):
     def visit_latex_math_latex(self, node):
         inline = isinstance(node.parent, nodes.TextElement)
         if inline:
-            self.body.append('$%s$' % node['latex'])
+            self.body.append('${}$'.format(node['latex']))
         else:
             self.body.extend(['\\begin{equation}',
                               node['latex'],

@@ -220,13 +220,13 @@ class Dvi(object):
         elif byte == 248: self._post()
         elif byte == 249: self._post_post()
         else:
-            raise ValueError("unknown command: byte %d"%byte)
+            raise ValueError("unknown command: byte {:d}".format(byte))
 
     def _pre(self, i, num, den, mag, comment):
         if self.state != _dvistate.pre:
             raise ValueError("pre command in middle of dvi file")
         if i != 2:
-            raise ValueError("Unknown dvi format %d"%i)
+            raise ValueError("Unknown dvi format {:d}".format(i))
         if num != 25400000 or den != 7227 * 2**16:
             raise ValueError("nonstandard units in dvi file")
             # meaning: TeX always uses those exact values, so it
@@ -289,7 +289,7 @@ class Dvi(object):
 
     def _bop(self, c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, p):
         if self.state != _dvistate.outer:
-            raise ValueError("misplaced bop in dvi file (state %d)" % self.state)
+            raise ValueError("misplaced bop in dvi file (state {:d})".format(self.state))
         self.state = _dvistate.inpage
         self.h, self.v, self.w, self.x, self.y, self.z = 0, 0, 0, 0, 0, 0
         self.stack = []
@@ -358,23 +358,23 @@ class Dvi(object):
     def _xxx(self, special):
         if sys.version_info[0] >= 3:
             matplotlib.verbose.report(
-                'Dvi._xxx: encountered special: %s'
-                % ''.join([(32 <= ord(ch) < 127) and chr(ch)
-                           or '<%02x>' % ord(ch)
-                           for ch in special]),
+                'Dvi._xxx: encountered special: {}'.format(
+                    ''.join([(32 <= ord(ch) < 127) and chr(ch)
+                             or '<{:02x}>'.format(ord(ch))
+                             for ch in special])),
                 'debug')
         else:
             matplotlib.verbose.report(
-                'Dvi._xxx: encountered special: %s'
-                % ''.join([(32 <= ord(ch) < 127) and ch
-                           or '<%02x>' % ord(ch)
-                           for ch in special]),
+                'Dvi._xxx: encountered special: {}'.format(
+                    ''.join([(32 <= ord(ch) < 127) and ch
+                             or '<{:02x}>'.format(ord(ch))
+                             for ch in special]),
                 'debug')
 
     def _fnt_def(self, k, c, s, d, a, l, n):
         tfm = _tfmfile(n[-l:].decode('ascii'))
         if c != 0 and tfm.checksum != 0 and c != tfm.checksum:
-            raise ValueError('tfm checksum mismatch: %s'%n)
+            raise ValueError('tfm checksum mismatch: {}'.format(n))
         # It seems that the assumption behind the following check is incorrect:
         #if d != tfm.design_size:
         #    raise ValueError, 'tfm design size mismatch: %d in dvi, %d in %s'%\
@@ -451,7 +451,7 @@ class DviFont(object):
             return _mul2012(width, self._scale)
 
         matplotlib.verbose.report(
-            'No width for char %d in font %s' % (char, self.texname),
+            'No width for char {:d} in font {}'.format(char, self.texname),
             'debug')
         return 0
 
@@ -466,7 +466,7 @@ class DviFont(object):
             value = metric.get(char, None)
             if value is None:
                 matplotlib.verbose.report(
-                    'No %s for char %d in font %s' % (name, char, self.texname),
+                    'No {} for char {:d} in font {}'.format(name, char, self.texname),
                     'debug')
                 result.append(0)
             else:
@@ -506,7 +506,7 @@ class Vf(Dvi):
                 raise ValueError("Packet length mismatch in vf file")
             else:
                 if byte in (139, 140) or byte >= 243:
-                    raise ValueError("Inappropriate opcode %d in vf file" % byte)
+                    raise ValueError("Inappropriate opcode {:d} in vf file".format(byte))
                 Dvi._dispatch(self, byte)
                 return
 
@@ -527,7 +527,7 @@ class Vf(Dvi):
         elif byte == 248:       # postamble (just some number of 248s)
             self.state = _dvistate.post_post
         else:
-            raise ValueError("unknown vf opcode %d" % byte)
+            raise ValueError("unknown vf opcode {:d}".format(byte))
 
     def _init_packet(self, pl, cc, tfm):
         if self.state != _dvistate.outer:
@@ -549,7 +549,7 @@ class Vf(Dvi):
         if self.state != _dvistate.pre:
             raise ValueError("pre command in middle of vf file")
         if i != 202:
-            raise ValueError("Unknown vf format %d" % i)
+            raise ValueError("Unknown vf format {:d}".format(i))
         if len(x):
             matplotlib.verbose.report('vf file comment: ' + x, 'debug')
         self.state = _dvistate.outer
@@ -615,7 +615,7 @@ class Tfm(object):
             lh, bc, ec, nw, nh, nd = \
                 struct.unpack('!6H', header1[2:14])
             matplotlib.verbose.report(
-                'lh=%d, bc=%d, ec=%d, nw=%d, nh=%d, nd=%d' % (
+                'lh={:d}, bc={:d}, ec={:d}, nw={:d}, nh={:d}, nd={:d}'.format(
                     lh, bc, ec, nw, nh, nd), 'debug')
             header2 = file.read(4*lh)
             self.checksum, self.design_size = \
@@ -630,7 +630,7 @@ class Tfm(object):
 
         self.width, self.height, self.depth = {}, {}, {}
         widths, heights, depths = \
-            [ struct.unpack('!%dI' % (len(x)/4), x)
+            [ struct.unpack('!{:d}I'.format(len(x)/4), x)
               for x in (widths, heights, depths) ]
         for idx, char in enumerate(xrange(bc, ec+1)):
             self.width[char] = _fix2comp(widths[ord(char_info[4*idx])])
@@ -743,8 +743,9 @@ class PsfontsMap(object):
 
         if len(encodings) > 1:
             # TODO this is a stopgap workaround, need to handle this correctly
-            matplotlib.verbose.report('Multiple encodings for %s = %s, skipping'
-                                      % (texname, psname), 'debug')
+            matplotlib.verbose.report(
+                'Multiple encodings for {} = {}, skipping'.format(
+                    texname, psname), 'debug')
             return
         elif len(encodings) == 1:
             encoding, = encodings
@@ -844,12 +845,14 @@ def find_tex_file(filename, format=None):
         cmd += ['--format=' + format]
     cmd += [filename]
 
-    matplotlib.verbose.report('find_tex_file(%s): %s' \
-                                  % (filename,cmd), 'debug')
+    matplotlib.verbose.report(
+        'find_tex_file({}): {}'.format(
+            filename,cmd), 'debug')
     pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     result = pipe.communicate()[0].rstrip()
-    matplotlib.verbose.report('find_tex_file result: %s' % result,
-                              'debug')
+    matplotlib.verbose.report(
+        'find_tex_file result: {}'.format(result),
+        'debug')
     return result.decode('ascii')
 
 def _read_nointr(pipe, bufsize=-1):

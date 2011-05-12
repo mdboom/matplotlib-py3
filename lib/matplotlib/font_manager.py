@@ -166,7 +166,7 @@ def list_fonts(directory, extensions):
     Return a list of all fonts matching any of the extensions,
     possibly upper-cased, found recursively under the directory.
     """
-    pattern = ';'.join(['*.%s;*.%s' % (ext, ext.upper())
+    pattern = ';'.join(['*.{};*.{}'.format(ext, ext.upper())
                         for ext in extensions])
     return cbook.listFiles(directory, pattern)
 
@@ -367,7 +367,7 @@ class FontEntry(object):
             self.size = size
 
     def __repr__(self):
-        return "<Font '%s' (%s) %s %s %s %s>" % (
+        return "<Font '{}' ({}) {} {} {} {}>".format(
             self.name, os.path.basename(self.fname), self.style, self.variant,
             self.weight, self.stretch)
 
@@ -544,7 +544,7 @@ def createFontList(fontfiles, fontext='ttf'):
     #  Add fonts from list of known font files.
     seen = {}
     for fpath in fontfiles:
-        verbose.report('createFontDict: %s' % (fpath), 'debug')
+        verbose.report('createFontDict: {}'.format(fpath), 'debug')
         fname = os.path.split(fpath)[1]
         if fname in seen:  continue
         else: seen[fname] = 1
@@ -552,7 +552,7 @@ def createFontList(fontfiles, fontext='ttf'):
             try:
                 fh = open(fpath, 'r')
             except:
-                verbose.report("Could not open font file %s" % fpath)
+                verbose.report("Could not open font file {}".format(fpath))
                 continue
             try:
                 try:
@@ -560,14 +560,14 @@ def createFontList(fontfiles, fontext='ttf'):
                 finally:
                     fh.close()
             except RuntimeError:
-                verbose.report("Could not parse font file %s"%fpath)
+                verbose.report("Could not parse font file {}".format(fpath))
                 continue
             prop = afmFontProperty(fpath, font)
         else:
             try:
                 font = ft2font.FT2Font(str(fpath))
             except RuntimeError:
-                verbose.report("Could not open font file %s"%fpath)
+                verbose.report("Could not open font file {}".format(fpath))
                 continue
             except UnicodeError:
                 verbose.report("Cannot handle unicode filenames")
@@ -965,7 +965,7 @@ class FontManager:
                 else:
                     paths.append(ttfpath)
 
-        verbose.report('font search path %s'%(str(paths)))
+        verbose.report('font search path {}'.format(paths))
         #  Load TrueType fonts and create font dictionary.
 
         self.ttffiles = findSystemFonts(paths) + findSystemFonts()
@@ -975,7 +975,7 @@ class FontManager:
         self.defaultFont = {}
 
         for fname in self.ttffiles:
-            verbose.report('trying fontname %s' % fname, 'debug')
+            verbose.report('trying fontname {}'.format(fname), 'debug')
             if fname.lower().find('vera.ttf')>=0:
                 self.defaultFont['ttf'] = fname
                 break
@@ -1165,7 +1165,7 @@ class FontManager:
             prop = FontProperties(prop)
         fname = prop.get_file()
         if fname is not None:
-            verbose.report('findfont returning %s'%fname, 'debug')
+            verbose.report('findfont returning {}'.format(fname), 'debug')
             return fname
 
         if fontext == 'afm':
@@ -1205,8 +1205,8 @@ class FontManager:
         if best_font is None or best_score >= 10.0:
             if fallback_to_default:
                 warnings.warn(
-                    'findfont: Font family %s not found. Falling back to %s' %
-                    (prop.get_family(), self.defaultFamily[fontext]))
+                    'findfont: Font family {} not found. Falling back to {}'.format(
+                        prop.get_family(), self.defaultFamily[fontext]))
                 default_prop = prop.copy()
                 default_prop.set_family(self.defaultFamily[fontext])
                 return self.findfont(default_prop, fontext, directory, False)
@@ -1214,14 +1214,14 @@ class FontManager:
                 # This is a hard fail -- we can't find anything reasonable,
                 # so just return the vera.ttf
                 warnings.warn(
-                    'findfont: Could not match %s. Returning %s' %
-                    (prop, self.defaultFont[fontext]),
+                    'findfont: Could not match {}. Returning {}'.format(
+                        prop, self.defaultFont[fontext]),
                     UserWarning)
                 result = self.defaultFont[fontext]
         else:
             verbose.report(
-                'findfont: Matching %s to %s (%s) with score of %f' %
-                (prop, best_font.name, best_font.fname, best_score))
+                'findfont: Matching {} to {} ({}) with score of {:f}'.format(
+                    prop, best_font.name, best_font.fname, best_score))
             result = best_font.fname
 
         if not os.path.isfile(result):
@@ -1316,7 +1316,7 @@ else:
             _rebuild()
         else:
             fontManager.default_size = None
-            verbose.report("Using fontManager instance from %s" % _fmcache)
+            verbose.report("Using fontManager instance from {}".format(_fmcache))
     except:
         _rebuild()
 

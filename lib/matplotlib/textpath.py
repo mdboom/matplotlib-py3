@@ -52,7 +52,7 @@ class TextToPath(object):
         Return a unique id for the given font and character-code set.
         """
         ps_name = font.get_sfnt()[(1,0,0,6)]
-        char_id = urllib.quote('%s-%d' % (ps_name, ccode))
+        char_id = urllib.quote('{}-{:d}'.format(ps_name, ccode))
         return char_id
 
     def _get_char_id_ps(self, font, ccode):
@@ -60,7 +60,7 @@ class TextToPath(object):
         Return a unique id for the given font and character-code set (for tex).
         """
         ps_name = font.get_ps_font_info()[2]
-        char_id = urllib.quote('%s-%d' % (ps_name, ccode))
+        char_id = urllib.quote('{}-{:d}'.format(ps_name, ccode))
         return char_id
 
 

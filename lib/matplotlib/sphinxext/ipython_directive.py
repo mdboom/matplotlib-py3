@@ -24,8 +24,8 @@ sphinx_version = tuple([int(re.split('[a-z]', x)[0])
 COMMENT, INPUT, OUTPUT =  range(3)
 rgxin = re.compile('In \[(\d+)\]:\s?(.*)\s*')
 rgxout = re.compile('Out\[(\d+)\]:\s?(.*)\s*')
-fmtin = 'In [%d]:'
-fmtout = 'Out[%d]:'
+fmtin = 'In [{:d}]:'
+fmtout = 'Out[{:d}]:'
 
 def block_parser(part):
     """
@@ -81,7 +81,7 @@ def block_parser(part):
             lineno, inputline = int(matchin.group(1)), matchin.group(2)
 
             # the ....: continuation string
-            continuation = '   %s:'%''.join(['.']*(len(str(lineno))+2))
+            continuation = '   {}:'.format(''.join(['.']*(len(str(lineno))+2)))
             Nc = len(continuation)
             # input lines can continue on for more than one line, if
             # we have a '\' line continuation char or a function call
@@ -191,8 +191,8 @@ class EmbeddedSphinxShell:
         m = rgxin.match(str(self.IP.outputcache.prompt1).strip())
         lineno = int(m.group(1))
 
-        input_prompt = fmtin%lineno
-        output_prompt = fmtout%lineno
+        input_prompt = fmtin.format(lineno)
+        output_prompt = fmtout.format(lineno)
         image_file = None
         image_directive = None
         for token, data in block:
@@ -213,26 +213,26 @@ class EmbeddedSphinxShell:
                 input_lines = input.split('\n')
 
 
-                continuation = '   %s:'%''.join(['.']*(len(str(lineno))+2))
+                continuation = '   {}:'.format(''.join(['.']*(len(str(lineno))+2)))
                 Nc = len(continuation)
 
                 if is_savefig:
                     saveargs = decorator.split(' ')
                     filename = saveargs[1]
-                    outfile = os.path.join('_static/%s'%filename)
+                    outfile = os.path.join('_static/{}'.format(filename))
                     # build out an image directive like
                     # .. image:: somefile.png
                     #    :width 4in
                     #
                     # from an input like
                     # savefig somefile.png width=4in
-                    imagerows = ['.. image:: %s'%outfile]
+                    imagerows = ['.. image:: {}'.format(outfile)]
 
                     for kwarg in saveargs[2:]:
                         arg, val = kwarg.split('=')
                         arg = arg.strip()
                         val = val.strip()
-                        imagerows.append('   :%s: %s'%(arg, val))
+                        imagerows.append('   :{}: {}'.format(arg, val))
 
 
                     image_file = outfile
@@ -256,13 +256,13 @@ class EmbeddedSphinxShell:
                         else:
                             # only submit the line in non-verbatim mode
                             self.process_input(line)
-                        formatted_line = '%s %s'%(input_prompt, line)
+                        formatted_line = '{} {}'.format(input_prompt, line)
                     else:
                         # process a continuation line
                         if not is_verbatim:
                             self.process_input(line)
 
-                        formatted_line = '%s %s'%(continuation, line)
+                        formatted_line = '{} {}'.format(continuation, line)
 
 
                     if not is_suppress:
@@ -274,7 +274,7 @@ class EmbeddedSphinxShell:
                             # the "rest" is the standard output of the
                             # input, which needs to be added in
                             # verbatim mode
-                            ret.append("%s"%rest)
+                            ret.append(str(rest))
                             ret.append('')
 
                 self.cout.seek(0)
@@ -291,7 +291,7 @@ class EmbeddedSphinxShell:
                 #print 'token==OUTPUT is_verbatim=%s'%is_verbatim
                 if is_verbatim:
                     # construct a mock output prompt
-                    output = '%s %s\n'%(fmtout%lineno, data)
+                    output = '{} {}\n'.format(fmtout%lineno, data)
                     ret.append(output)
 
                 #print 'token==OUTPUT', output
@@ -301,17 +301,19 @@ class EmbeddedSphinxShell:
                     if found is not None:
                         ind = found.find(output_prompt)
                         if ind<0:
-                            raise RuntimeError('output prompt="%s" does not match out line=%s'%(output_prompt, found))
+                            raise RuntimeError(
+                                'output prompt="{}" does not match out line={}'.format(
+                                    output_prompt, found))
                         found = found[len(output_prompt):].strip()
 
                         if found!=submitted:
-                            raise RuntimeError('doctest failure for input_lines="%s" with found_output="%s" and submitted output="%s"'%(input_lines, found, submitted))
-                        #print 'doctest PASSED for input_lines="%s" with found_output="%s" and submitted output="%s"'%(input_lines, found, submitted)
+                            raise RuntimeError(
+                                'doctest failure for input_lines="{}" with found_output="{}" and submitted output="{}"'.format(input_lines, found, submitted))
 
 
         if image_file is not None:
             self.insure_pyplot()
-            command = 'plt.gcf().savefig("%s")'%image_file
+            command = 'plt.gcf().savefig("{}")'.format(image_file)
             #print 'SAVEFIG', command
             self.process_input('bookmark ipy_thisdir')
             self.process_input('cd -b ipy_basedir')
@@ -354,7 +356,7 @@ def ipython_directive(name, arguments, options, content, lineno,
         if len(block):
             rows, figure = shell.process_block(block)
             for row in rows:
-                lines.extend(['    %s'%line for line in row.split('\n')])
+                lines.extend(['    {}'.format(line) for line in row.split('\n')])
 
             if figure is not None:
                 figures.append(figure)

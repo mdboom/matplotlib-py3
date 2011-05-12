@@ -386,7 +386,7 @@ class DateFormatter(ticker.Formatter):
                 sites.append(site)
 
         s = s1
-        syear = "%4d" % (dt.year,)
+        syear = "{:4d}".format(dt.year)
         for site in sites:
             s = s[:site] + syear + s[site+4:]
 
@@ -586,7 +586,8 @@ class RRuleLocator(DateLocator):
         # about bailing...
         if estimate > self.MAXTICKS * 2:
             raise RuntimeError(
-                'RRuleLocator estimated to generate %d ticks from %s to %s: exceeds Locator.MAXTICKS * 2 (%d) ' % (estimate, dmin, dmax, self.MAXTICKS * 2))
+                'RRuleLocator estimated to generate {:d} ticks from {} to {}: exceeds Locator.MAXTICKS * 2 ({:d}) '.format(
+                    estimate, dmin, dmax, self.MAXTICKS * 2))
 
         dates = self.rule.between(dmin, dmax, True)
         if len(dates) == 0:

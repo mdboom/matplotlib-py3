@@ -183,11 +183,13 @@ except ImportError:
                 unc_path, rest = splitunc(path)
                 unc_start, rest = splitunc(start)
                 if bool(unc_path) ^ bool(unc_start):
-                    raise ValueError("Cannot mix UNC and non-UNC paths (%s and %s)"
-                                                                        % (path, start))
+                    raise ValueError(
+                        "Cannot mix UNC and non-UNC paths ({} and {})".format(
+                            path, start))
                 else:
-                    raise ValueError("path is on drive %s, start on drive %s"
-                                                        % (path_list[0], start_list[0]))
+                    raise ValueError(
+                        "path is on drive {}, start on drive {}".format(
+                            path_list[0], start_list[0]))
             # Work out how much of the filepath is shared by start and path.
             for i in range(min(len(start_list), len(path_list))):
                 if start_list[i].lower() != path_list[i].lower():
@@ -220,7 +222,7 @@ def _option_boolean(arg):
     elif arg.strip().lower() in ('yes', '1', 'true'):
         return True
     else:
-        raise ValueError('"%s" unknown boolean' % arg)
+        raise ValueError('"{}" unknown boolean'.format(arg))
 
 def _option_format(arg):
     return directives.choice(arg, ('python', 'doctest'))
@@ -396,15 +398,6 @@ TEMPLATE = """
 
 """
 
-exception_template = """
-.. htmlonly::
-
-   [`source code <%(linkdir)s/%(basename)s.py>`__]
-
-Exception occurred rendering plot.
-
-"""
-
 # the context of the plot for all directives specified with the
 # :context: option
 plot_context = dict()
@@ -416,7 +409,7 @@ class ImageFile(object):
         self.formats = []
 
     def filename(self, format):
-        return os.path.join(self.dirname, "%s.%s" % (self.basename, format))
+        return os.path.join(self.dirname, "{}.{}".format(self.basename, format))
 
     def filenames(self):
         return [self.filename(fmt) for fmt in self.formats]
@@ -503,7 +496,7 @@ def render_figures(code, code_path, output_dir, output_base, context,
         elif type(fmt) in (tuple, list) and len(fmt)==2:
             formats.append((str(fmt[0]), int(fmt[1])))
         else:
-            raise PlotError('invalid image format "%r" in plot_formats' % fmt)
+            raise PlotError('invalid image format "{!r}" in plot_formats'.format(fmt))
 
     # -- Try to determine if all images already exist
 
@@ -529,9 +522,9 @@ def render_figures(code, code_path, output_dir, output_base, context,
         images = []
         for j in xrange(1000):
             if len(code_pieces) > 1:
-                img = ImageFile('%s_%02d_%02d' % (output_base, i, j), output_dir)
+                img = ImageFile('{}_{:02d}_{:02d}'.format(output_base, i, j), output_dir)
             else:
-                img = ImageFile('%s_%02d' % (output_base, j), output_dir)
+                img = ImageFile('{}_{:02d}'.format(output_base, j), output_dir)
             for format, dpi in formats:
                 if out_of_date(code_path, img.filename(format)):
                     all_exists = False
@@ -569,9 +562,9 @@ def render_figures(code, code_path, output_dir, output_base, context,
             if len(fig_managers) == 1 and len(code_pieces) == 1:
                 img = ImageFile(output_base, output_dir)
             elif len(code_pieces) == 1:
-                img = ImageFile("%s_%02d" % (output_base, j), output_dir)
+                img = ImageFile("{}_{:02d}".format(output_base, j), output_dir)
             else:
-                img = ImageFile("%s_%02d_%02d" % (output_base, i, j),
+                img = ImageFile("{}_{:02d}_{:02d}".format(output_base, i, j),
                                 output_dir)
             images.append(img)
             for format, dpi in formats:
@@ -627,7 +620,7 @@ def run(arguments, content, options, state_machine, state, lineno):
         counter = document.attributes.get('_plot_counter', 0) + 1
         document.attributes['_plot_counter'] = counter
         base, ext = os.path.splitext(os.path.basename(source_file_name))
-        output_base = '%s-%d.py' % (base, counter)
+        output_base = '{}-{:d}.py'.format(base, counter)
         function_name = None
         caption = ''
 
@@ -681,7 +674,7 @@ def run(arguments, content, options, state_machine, state, lineno):
     except PlotError, err:
         reporter = state.memo.reporter
         sm = reporter.system_message(
-            2, "Exception occurred in plotting %s: %s" % (output_base, err),
+            2, "Exception occurred in plotting {}: {}".format(output_base, err),
             line=lineno)
         results = [(code, [])]
         errors = [sm]
@@ -699,7 +692,7 @@ def run(arguments, content, options, state_machine, state, lineno):
                 lines += [row.rstrip() for row in code_piece.split('\n')]
             else:
                 lines = ['.. code-block:: python', '']
-                lines += ['    %s' % row.rstrip()
+                lines += ['    {}'.format(row.rstrip())
                           for row in code_piece.split('\n')]
             source_code = "\n".join(lines)
         else:
@@ -708,7 +701,7 @@ def run(arguments, content, options, state_machine, state, lineno):
         if nofigs:
             images = []
 
-        opts = [':%s: %s' % (key, val) for key, val in options.items()
+        opts = [':{}: {}'.format(key, val) for key, val in options.items()
                 if key in ('alt', 'height', 'width', 'scale', 'align', 'class')]
 
         only_html = ".. only:: html"

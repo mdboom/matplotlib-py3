@@ -151,8 +151,8 @@ linewidths and edgecolors can be used to customize the arrow
 outlines. Additional :class:`~matplotlib.collections.PolyCollection`
 keyword arguments:
 
-%(PolyCollection)s
-""" % docstring.interpd.params
+{PolyCollection}
+""".format(**docstring.interpd.params)
 
 _quiverkey_doc = """
 Add a key to a quiver plot.
@@ -388,7 +388,7 @@ class Quiver(collections.PolyCollection):
         The constructor takes one required argument, an Axes
         instance, followed by the args and kwargs described
         by the following pylab interface documentation:
-        %s"""
+        {}"""
         self.ax = ax
         X, Y, U, V, C = _parse_args(*args)
         self.X = X
@@ -783,8 +783,8 @@ linewidths and edgecolors can be used to customize the barb.
 Additional :class:`~matplotlib.collections.PolyCollection` keyword
 arguments:
 
-%(PolyCollection)s
-""" % docstring.interpd.params
+{PolyCollection}
+""".format(**docstring.interpd.params)
 
 docstring.interpd.update(barbs_doc=_barbs_doc)
 
@@ -811,7 +811,7 @@ class Barbs(collections.PolyCollection):
         The constructor takes one required argument, an Axes
         instance, followed by the args and kwargs described
         by the following pylab interface documentation:
-        %(barbs_doc)s"""
+        {barbs_doc}"""
         self._pivot = kw.pop('pivot', 'tip')
         self._length = kw.pop('length', 7)
         barbcolor = kw.pop('barbcolor', None)

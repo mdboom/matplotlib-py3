@@ -342,7 +342,7 @@ def close(*args):
         elif isinstance(arg, Figure):
             _pylab_helpers.Gcf.destroy_fig(arg)
         else:
-            raise TypeError('Unrecognized argument type %s to close'%type(arg))
+            raise TypeError('Unrecognized argument type {} to close'.format(type(arg)))
     else:
         raise TypeError('close takes 0 or 1 arguments')
 
@@ -1132,11 +1132,11 @@ def xscale(*args, **kwargs):
 
       xscale(scale, **kwargs)
 
-    Set the scaling for the x-axis: %(scale)s
+    Set the scaling for the x-axis: {scale}
 
     Different keywords may be accepted, depending on the scale:
 
-    %(scale_docs)s
+    {scale_docs}
     """
     ax = gca()
     ax.set_xscale(*args, **kwargs)
@@ -1149,11 +1149,11 @@ def yscale(*args, **kwargs):
 
       yscale(scale, **kwargs)
 
-    Set the scaling for the y-axis: %(scale)s
+    Set the scaling for the y-axis: {scale}
 
     Different keywords may be accepted, depending on the scale:
 
-    %(scale_docs)s
+    {scale_docs}
     """
     ax = gca()
     ax.set_yscale(*args, **kwargs)
@@ -1300,6 +1300,7 @@ def rgrids(*args, **kwargs):
     return ( silent_list('Line2D rgridline', lines),
              silent_list('Text rgridlabel', labels) )
 
+# PY3K TODO: Support new-style formatting for fmt kwarg
 def thetagrids(*args, **kwargs):
     """
     Set/Get the theta locations of the gridlines and ticklabels.

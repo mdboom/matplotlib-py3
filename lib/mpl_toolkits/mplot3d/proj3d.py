@@ -243,7 +243,7 @@ def test_proj():
     import pylab
     M = test_proj_make_M()
 
-    ts = ['%d' % i for i in [0,1,2,3,0,4,5,6,7,4]]
+    ts = [str(i) for i in [0,1,2,3,0,4,5,6,7,4]]
     xs, ys, zs = [0,1,1,0,0, 0,1,1,0,0], [0,0,1,1,0, 0,0,1,1,0], \
             [0,0,0,0,0, 1,1,1,1,1]
     xs, ys, zs = [np.array(v)*300 for v in (xs, ys, zs)]

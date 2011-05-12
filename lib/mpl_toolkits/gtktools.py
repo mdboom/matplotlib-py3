@@ -359,7 +359,7 @@ class RecListStore(gtk.ListStore):
      * callbacks - a matplotlib.cbook.CallbackRegistry.  Connect to the cell_changed with
 
         def mycallback(liststore, rownum, colname, oldval, newval):
-           print 'verify: old=%s, new=%s, rec=%s'%(oldval, newval, liststore.r[rownum][colname])
+           print 'verify: old={}, new={}, rec={}'.format(oldval, newval, liststore.r[rownum][colname])
 
         cid = liststore.callbacks.connect('cell_changed', mycallback)
 
@@ -439,7 +439,7 @@ class RecListStore(gtk.ListStore):
         oldval = self.r[rownum][colname]
         try: newval = format.fromstr(newtext)
         except ValueError:
-            msg = cbook.exception_to_str('Error converting "%s"'%newtext)
+            msg = cbook.exception_to_str('Error converting "{}"'.format(newtext))
             error_message(msg, title='Error')
             return
         self.r[rownum][colname] = newval
@@ -610,7 +610,7 @@ if __name__=='__main__':
     treeview = RecTreeView(liststore, constant=constant)
 
     def mycallback(liststore, rownum, colname, oldval, newval):
-        print 'verify: old=%s, new=%s, rec=%s'%(oldval, newval, liststore.r[rownum][colname])
+        print('verify: old={}, new={}, rec={}'.format(oldval, newval, liststore.r[rownum][colname]))
 
     liststore.callbacks.connect('cell_changed', mycallback)
 

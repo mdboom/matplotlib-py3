@@ -222,7 +222,7 @@ class GridSpec(GridSpecBase):
             if k in self._AllowedKeys:
                 setattr(self, k, v)
             else:
-                raise AttributeError("%s is unknown keyword" % (k,))
+                raise AttributeError("{} is unknown keyword".format(k))
 
 
         from matplotlib import _pylab_helpers

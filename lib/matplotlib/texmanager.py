@@ -63,7 +63,7 @@ def dvipng_hack_alpha():
     for line in stdout:
         if line.startswith(b'dvipng '):
             version = line.split()[-1]
-            mpl.verbose.report('Found dvipng version %s'% version,
+            mpl.verbose.report('Found dvipng version {}'.format(version),
                 'helpful')
             version = version.decode('ascii')
             version = distutils.version.LooseVersion(version)
@@ -88,8 +88,8 @@ class TexManager:
 
     if os.path.exists(oldcache):
         print("""\
-WARNING: found a TeX cache dir in the deprecated location "%s".
-  Moving it to the new default location "%s"."""%(oldcache, texcache), file=sys.stderr)
+WARNING: found a TeX cache dir in the deprecated location "{}".
+  Moving it to the new default location "{}".""".format(oldcache, texcache), file=sys.stderr)
         shutil.move(oldcache, texcache)
     if not os.path.exists(texcache):
         os.mkdir(texcache)
@@ -139,7 +139,9 @@ WARNING: found a TeX cache dir in the deprecated location "%s".
         if ff in self.font_families:
             self.font_family = ff
         else:
-            mpl.verbose.report('The %s font family is not compatible with LaTeX. serif will be used by default.' % ff, 'helpful')
+            mpl.verbose.report(
+                'The {} font family is not compatible with LaTeX. serif will be used by default.'.format(ff),
+                'helpful')
             self.font_family = 'serif'
 
         fontconfig = [self.font_family]
@@ -151,13 +153,15 @@ WARNING: found a TeX cache dir in the deprecated location "%s".
                     setattr(self, font_family_attr,
                             self.font_info[font.lower()])
                     if DEBUG:
-                        print('family: %s, font: %s, info: %s'%(font_family,
-                                    font, self.font_info[font.lower()]))
+                        print('family: {}, font: {}, info: {}'.format(
+                            font_family, font, self.font_info[font.lower()]))
                     break
                 else:
                     if DEBUG: print('$s font is not compatible with usetex')
             else:
-                mpl.verbose.report('No LaTeX-compatible font found for the %s font family in rcParams. Using default.' % ff, 'helpful')
+                mpl.verbose.report(
+                    'No LaTeX-compatible font found for the {} font family in rcParams. Using default.'.format(ff),
+                    'helpful')
                 setattr(self, font_family_attr, self.font_info[font_family])
             fontconfig.append(getattr(self, font_family_attr)[0])
         self._fontconfig = ''.join(fontconfig)
@@ -176,7 +180,7 @@ WARNING: found a TeX cache dir in the deprecated location "%s".
         """
         returns a filename based on a hash of the string, fontsize, and dpi
         """
-        s = ''.join([tex, self.get_font_config(), '%f'%fontsize,
+        s = ''.join([tex, self.get_font_config(), str(fontsize),
                      self.get_custom_preamble(), str(dpi or '')])
         # make sure hash is consistent for all strings, regardless of encoding:
         bytes = unicode(s).encode('utf-8')
@@ -192,8 +196,8 @@ WARNING: found a TeX cache dir in the deprecated location "%s".
             if DEBUG: print('DEBUG following keys changed:', changed)
             for k in changed:
                 if DEBUG:
-                    print('DEBUG %-20s: %-10s -> %-10s' % \
-                            (k, self._rc_cache[k], rcParams[k]))
+                    print('DEBUG {:20s}: {:10s} -> {:10s}'.format(
+                        k, self._rc_cache[k], rcParams[k]))
                 # deepcopy may not be necessary, but feels more future-proof
                 self._rc_cache[k] = copy.deepcopy(rcParams[k])
             if DEBUG: print('DEBUG RE-INIT\nold fontconfig:', self._fontconfig)
@@ -217,7 +221,7 @@ WARNING: found a TeX cache dir in the deprecated location "%s".
         multiple drives. get_shell_cmd deals with this issue.
         """
         if sys.platform == 'win32':
-            command = ['%s'% os.path.splitdrive(self.texcache)[0]]
+            command = [str(os.path.splitdrive(self.texcache)[0])]
         else:
             command = []
         command.extend(args)
@@ -230,13 +234,13 @@ WARNING: found a TeX cache dir in the deprecated location "%s".
         returns the file name
         """
         basefile = self.get_basefile(tex, fontsize)
-        texfile = '%s.tex'%basefile
+        texfile = '{}.tex'.format(basefile)
         fh = open(texfile, 'wb')
         custom_preamble = self.get_custom_preamble()
-        fontcmd = {'sans-serif' : r'{\sffamily %s}',
-                   'monospace'  : r'{\ttfamily %s}'}.get(self.font_family,
-                                                         r'{\rmfamily %s}')
-        tex = fontcmd % tex
+        fontcmd = {'sans-serif' : r'{{\sffamily {}}}',
+                   'monospace'  : r'{{\ttfamily {}}}'}.get(self.font_family,
+                                                           r'{{\rmfamily {}}}')
+        tex = fontcmd.format(tex)
 
         if rcParams['text.latex.unicode']:
             unicode_preamble = r"""\usepackage{ucs}
@@ -244,17 +248,17 @@ WARNING: found a TeX cache dir in the deprecated location "%s".
         else:
             unicode_preamble = ''
 
-        s = r"""\documentclass{article}
-%s
-%s
-%s
-\usepackage[papersize={72in,72in}, body={70in,70in}, margin={1in,1in}]{geometry}
-\pagestyle{empty}
-\begin{document}
-\fontsize{%f}{%f}%s
+        s = r"""\documentclass{{article}}
+{}
+{}
+{}
+\usepackage[papersize={{72in,72in}}, body={{70in,70in}}, margin={{1in,1in}}]{{geometry}}
+\pagestyle{{empty}}
+\begin{{document}}
+\fontsize{{{:f}}}{{{:f}}}{}
 \end{document}
-""" % (self._font_preamble, unicode_preamble, custom_preamble,
-       fontsize, fontsize*1.25, tex)
+""".format(self._font_preamble, unicode_preamble, custom_preamble,
+           fontsize, fontsize*1.25, tex)
         if rcParams['text.latex.unicode']:
             fh.write(s.encode('utf8'))
         else:
@@ -282,13 +286,13 @@ WARNING: found a TeX cache dir in the deprecated location "%s".
         returns the file name
         """
         basefile = self.get_basefile(tex, fontsize)
-        texfile = '%s.tex'%basefile
+        texfile = '{}.tex'.format(basefile)
         fh = open(texfile, 'w')
         custom_preamble = self.get_custom_preamble()
-        fontcmd = {'sans-serif' : r'{\sffamily %s}',
-                   'monospace'  : r'{\ttfamily %s}'}.get(self.font_family,
-                                                         r'{\rmfamily %s}')
-        tex = fontcmd % tex
+        fontcmd = {'sans-serif' : r'{{\sffamily {}}}',
+                   'monospace'  : r'{{\ttfamily {}}}'}.get(self.font_family,
+                                                           r'{{\rmfamily {}}}')
+        tex = fontcmd.format(tex)
 
         if rcParams['text.latex.unicode']:
             unicode_preamble = r"""\usepackage{ucs}
@@ -302,24 +306,24 @@ WARNING: found a TeX cache dir in the deprecated location "%s".
         # extent of the rendered text.
 
 
-        s = r"""\documentclass{article}
-%s
-%s
-%s
-\usepackage[active,showbox,tightpage]{preview}
-\usepackage[papersize={72in,72in}, body={70in,70in}, margin={1in,1in}]{geometry}
+        s = r"""\documentclass{{article}}
+{}
+{}
+{}
+\usepackage[active,showbox,tightpage]{{preview}}
+\usepackage[papersize={{72in,72in}}, body={{70in,70in}}, margin={{1in,1in}}]{{geometry}}
 
-%% we override the default showbox as it is treated as an error and makes
-%% the exit status not zero
-\def\showbox#1{\immediate\write16{MatplotlibBox:(\the\ht#1+\the\dp#1)x\the\wd#1}}
+% we override the default showbox as it is treated as an error and makes
+% the exit status not zero
+\def\showbox#1{{\immediate\write16{{MatplotlibBox:(\the\ht#1+\the\dp#1)x\the\wd#1}}}}
 
-\begin{document}
-\begin{preview}
-{\fontsize{%f}{%f}%s}
-\end{preview}
-\end{document}
-""" % (self._font_preamble, unicode_preamble, custom_preamble,
-       fontsize, fontsize*1.25, tex)
+\begin{{document}}
+\begin{{preview}}
+{{\fontsize{{{:f}}}{{{:f}}}{}}}
+\end{{preview}}
+\end{{document}}
+""".format(self._font_preamble, unicode_preamble, custom_preamble,
+           fontsize, fontsize*1.25, tex)
         if rcParams['text.latex.unicode']:
             fh.write(s.encode('utf8'))
         else:
@@ -348,14 +352,14 @@ WARNING: found a TeX cache dir in the deprecated location "%s".
             return self.make_dvi_preview(tex, fontsize)
 
         basefile = self.get_basefile(tex, fontsize)
-        dvifile = '%s.dvi'% basefile
+        dvifile = '{}.dvi'.format(basefile)
 
         if DEBUG or not os.path.exists(dvifile):
             texfile = self.make_tex(tex, fontsize)
             outfile = basefile+'.output'
-            command = self._get_shell_cmd('cd "%s"'% self.texcache,
-                            'latex -interaction=nonstopmode %s > "%s"'\
-                            %(os.path.split(texfile)[-1], outfile))
+            command = self._get_shell_cmd('cd "{}"'.format(self.texcache),
+                                          'latex -interaction=nonstopmode {} > "{}"'.format(
+                                          os.path.split(texfile)[-1], outfile))
             mpl.verbose.report(command, 'debug')
             exit_status = os.system(command)
             try:
@@ -371,7 +375,7 @@ WARNING: found a TeX cache dir in the deprecated location "%s".
                 exists = False
             if exit_status or not exists:
                 raise RuntimeError(('LaTeX was not able to process the following \
-string:\n%s\nHere is the full report generated by LaTeX: \n\n'% repr(tex)) + report)
+string:\n{!r}\nHere is the full report generated by LaTeX: \n\n'.format(tex)) + report)
             else: mpl.verbose.report(report, 'debug')
             for fname in glob.glob(basefile+'*'):
                 if fname.endswith('dvi'): pass
@@ -392,16 +396,17 @@ string:\n%s\nHere is the full report generated by LaTeX: \n\n'% repr(tex)) + rep
         returns the file name
         """
         basefile = self.get_basefile(tex, fontsize)
-        dvifile = '%s.dvi'% basefile
-        baselinefile = '%s.baseline'% basefile
+        dvifile = '{}.dvi'.format(basefile)
+        baselinefile = '{}.baseline'.format(basefile)
 
         if DEBUG or not os.path.exists(dvifile) or \
                not os.path.exists(baselinefile):
             texfile = self.make_tex_preview(tex, fontsize)
             outfile = basefile+'.output'
-            command = self._get_shell_cmd('cd "%s"'% self.texcache,
-                            'latex -interaction=nonstopmode %s > "%s"'\
-                            %(os.path.split(texfile)[-1], outfile))
+            command = self._get_shell_cmd(
+                'cd "{}"'.format(self.texcache),
+                'latex -interaction=nonstopmode {} > "{}"'.format(
+                    os.path.split(texfile)[-1], outfile))
             mpl.verbose.report(command, 'debug')
             exit_status = os.system(command)
             try:
@@ -413,7 +418,7 @@ string:\n%s\nHere is the full report generated by LaTeX: \n\n'% repr(tex)) + rep
                 report = 'No latex error report available.'
             if exit_status:
                 raise RuntimeError(('LaTeX was not able to process the following \
-string:\n%s\nHere is the full report generated by LaTeX: \n\n'% repr(tex)) + report)
+string:\n{!r}\nHere is the full report generated by LaTeX: \n\n'.format(tex)) + report)
             else: mpl.verbose.report(report, 'debug')
 
             # find the box extent information in the latex output
@@ -438,16 +443,18 @@ string:\n%s\nHere is the full report generated by LaTeX: \n\n'% repr(tex)) + rep
         returns the filename
         """
         basefile = self.get_basefile(tex, fontsize, dpi)
-        pngfile = '%s.png'% basefile
+        pngfile = '{}.png'.format(basefile)
 
         # see get_rgba for a discussion of the background
         if DEBUG or not os.path.exists(pngfile):
             dvifile = self.make_dvi(tex, fontsize)
             outfile = basefile+'.output'
-            command = self._get_shell_cmd('cd "%s"' % self.texcache,
-                        'dvipng -bg Transparent -D %s -T tight -o \
-                        "%s" "%s" > "%s"'%(dpi, os.path.split(pngfile)[-1],
-                        os.path.split(dvifile)[-1], outfile))
+            command = self._get_shell_cmd(
+                'cd "{}"'.format(self.texcache),
+                'dvipng -bg Transparent -D {} -T tight -o \
+                "{}" "{}" > "{}"'.format(
+                    dpi, os.path.split(pngfile)[-1],
+                    os.path.split(dvifile)[-1], outfile))
             mpl.verbose.report(command, 'debug')
             exit_status = os.system(command)
             try:
@@ -458,8 +465,8 @@ string:\n%s\nHere is the full report generated by LaTeX: \n\n'% repr(tex)) + rep
                 report = 'No dvipng error report available.'
             if exit_status:
                 raise RuntimeError('dvipng was not able to \
-process the following file:\n%s\nHere is the full report generated by dvipng: \
-\n\n'% dvifile + report)
+process the following file:\n{}\nHere is the full report generated by dvipng: \
+\n\n'.format(dvifile) + report)
             else: mpl.verbose.report(report, 'debug')
             try: os.remove(outfile)
             except OSError: pass
@@ -473,22 +480,23 @@ process the following file:\n%s\nHere is the full report generated by dvipng: \
         returns the file name
         """
         basefile = self.get_basefile(tex, fontsize)
-        psfile = '%s.epsf'% basefile
+        psfile = '{}.epsf'.format(basefile)
 
         if DEBUG or not os.path.exists(psfile):
             dvifile = self.make_dvi(tex, fontsize)
             outfile = basefile+'.output'
-            command = self._get_shell_cmd('cd "%s"'% self.texcache,
-                        'dvips -q -E -o "%s" "%s" > "%s"'\
-                        %(os.path.split(psfile)[-1],
-                          os.path.split(dvifile)[-1], outfile))
+            command = self._get_shell_cmd(
+                'cd "{}"'.format(self.texcache),
+                'dvips -q -E -o "{}" "{}" > "{}"'.format(
+                    os.path.split(psfile)[-1],
+                    os.path.split(dvifile)[-1], outfile))
             mpl.verbose.report(command, 'debug')
             exit_status = os.system(command)
             fh = open(outfile)
             if exit_status:
                 raise RuntimeError('dvipng was not able to \
-process the flowing file:\n%s\nHere is the full report generated by dvipng: \
-\n\n'% dvifile + fh.read())
+process the flowing file:\n{}\nHere is the full report generated by dvipng: \
+\n\n'.format(dvifile) + fh.read())
             else: mpl.verbose.report(fh.read(), 'debug')
             fh.close()
             os.remove(outfile)
@@ -505,7 +513,7 @@ process the flowing file:\n%s\nHere is the full report generated by dvipng: \
         for line in ps:
             if line.startswith('%%BoundingBox:'):
                 return [int(val) for val in line.split()[1:]]
-        raise RuntimeError('Could not parse %s'%psfile)
+        raise RuntimeError('Could not parse {}'.format(psfile))
 
     def get_grey(self, tex, fontsize=None, dpi=None):
         """returns the alpha channel"""
@@ -594,7 +602,7 @@ process the flowing file:\n%s\nHere is the full report generated by dvipng: \
         if rcParams['text.latex.preview']:
             # use preview.sty
             basefile = self.get_basefile(tex, fontsize)
-            baselinefile = '%s.baseline'% basefile
+            baselinefile = '{}.baseline'.format(basefile)
 
 
             if DEBUG or not os.path.exists(baselinefile):

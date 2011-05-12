@@ -44,7 +44,7 @@ class Spine(mpatches.Patch):
         - *path* : the path instance used to draw the spine
 
         Valid kwargs are:
-        %(Patch)s
+        {Patch}
         """
         super(Spine,self).__init__(**kwargs)
         self.axes = axes
@@ -188,7 +188,7 @@ class Spine(mpatches.Patch):
             elif self.spine_type in ('top','bottom'):
                 low,high = self.axes.viewLim.intervalx
             else:
-                raise ValueError('unknown spine spine_type: %s'%self.spine_type)
+                raise ValueError('unknown spine spine_type: {}'.format(self.spine_type))
 
             if self._smart_bounds:
                 # attempt to set bounds in sophisticated way
@@ -256,7 +256,7 @@ class Spine(mpatches.Patch):
             v1[0,0] = low
             v1[1,0] = high
         else:
-            raise ValueError('unable to set bounds for spine "%s"'%spine_type)
+            raise ValueError('unable to set bounds for spine "{}"'.format(spine_type))
 
     @allow_rasterization
     def draw(self, renderer):
@@ -292,8 +292,8 @@ class Spine(mpatches.Patch):
                                          mtransforms.ScaledTranslation(offset_x,offset_y,
                                                                        self.figure.dpi_scale_trans))
             else:
-                warnings.warn('unknown spine type "%s": no spine '
-                              'offset performed'%self.spine_type)
+                warnings.warn('unknown spine type "{}": no spine '
+                              'offset performed'.format(self.spine_type))
                 self._spine_transform = ('identity',mtransforms.IdentityTransform())
         elif position_type=='axes':
             if self.spine_type in ('left','right'):
@@ -307,8 +307,8 @@ class Spine(mpatches.Patch):
                     # keep x unchanged, fix y at amount
                     1,0,0,0,0,amount))
             else:
-                warnings.warn('unknown spine type "%s": no spine '
-                              'offset performed'%self.spine_type)
+                warnings.warn('unknown spine type "{}": no spine '
+                              'offset performed'.format(self.spine_type))
                 self._spine_transform = ('identity',mtransforms.IdentityTransform())
         elif position_type=='data':
             if self.spine_type in ('left','right'):
@@ -318,8 +318,8 @@ class Spine(mpatches.Patch):
                 self._spine_transform = ('data',
                                          mtransforms.Affine2D().translate(0,amount))
             else:
-                warnings.warn('unknown spine type "%s": no spine '
-                              'offset performed'%self.spine_type)
+                warnings.warn('unknown spine type "{}": no spine '
+                              'offset performed'.format(self.spine_type))
                 self._spine_transform =  ('identity',mtransforms.IdentityTransform())
 
     def set_position(self,position):
@@ -385,7 +385,7 @@ class Spine(mpatches.Patch):
                 result = mtransforms.blended_transform_factory(
                     self.axes.transData,data_xform)
             else:
-                raise ValueError('unknown spine spine_type: %s'%self.spine_type)
+                raise ValueError('unknown spine spine_type: {}'.format(self.spine_type))
             return result
 
         if self.spine_type in ['left','right']:
@@ -393,7 +393,7 @@ class Spine(mpatches.Patch):
         elif self.spine_type in ['top','bottom']:
             base_transform = self.axes.get_xaxis_transform(which='grid')
         else:
-            raise ValueError('unknown spine spine_type: %s'%self.spine_type)
+            raise ValueError('unknown spine spine_type: {}'.format(self.spine_type))
 
         if what=='identity':
             return base_transform
@@ -402,7 +402,7 @@ class Spine(mpatches.Patch):
         elif what=='pre':
             return how+base_transform
         else:
-            raise ValueError("unknown spine_transform type: %s"%what)
+            raise ValueError("unknown spine_transform type: {}".format(what))
 
     def set_bounds( self, low, high ):
         """Set the bounds of the spine."""
@@ -430,7 +430,7 @@ class Spine(mpatches.Patch):
         elif spine_type=='top':
             path = mpath.Path([(13, 1.0), (13, 1.0)])
         else:
-            raise ValueError('unable to make path for spine "%s"'%spine_type)
+            raise ValueError('unable to make path for spine "{}"'.format(spine_type))
         result = cls(axes,spine_type,path,**kwargs)
         return result
 

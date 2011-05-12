@@ -89,17 +89,17 @@ class AxesStack(Stack):
         # All the error checking may be unnecessary; but this method
         # is called so seldom that the overhead is negligible.
         if not isinstance(a, Axes):
-            raise ValueError("second argument, %s, is not an Axes" % a)
+            raise ValueError("second argument, {}, is not an Axes".format(a))
         try:
             hash(key)
         except TypeError:
-            raise ValueError("first argument, %s, is not a valid key" % key)
+            raise ValueError("first argument, {}, is not a valid key".format(key))
 
         a_existing = self.get(key)
         if a_existing is not None:
             Stack.remove(self, (key, a_existing))
             warnings.Warn(
-                    "key %s already existed; Axes is being replaced" % key)
+                    "key {} already existed; Axes is being replaced".format(key))
             # I don't think the above should ever happen.
 
         if a in self:
@@ -220,7 +220,7 @@ class Figure(Artist):
     """
 
     def __str__(self):
-        return "Figure(%gx%g)" % tuple(self.bbox.size)
+        return "Figure({:g}x{:g})".format(*self.bbox.size)
 
     def __init__(self,
                  figsize   = None,  # defaults to rc figure.figsize
@@ -641,8 +641,9 @@ class Figure(Artist):
         sets the projection type of the axes.  (For backward
         compatibility, ``polar=True`` may also be provided, which is
         equivalent to ``projection='polar'``).  Valid values for
-        *projection* are: %(projection_names)s.  Some of these projections support
-        additional kwargs, which may be provided to :meth:`add_axes`::
+        *projection* are: {projection_names}.  Some of these
+        projections support additional kwargs, which may be provided
+        to :meth:`add_axes`::
 
             rect = l,b,w,h
             fig.add_axes(rect)
@@ -667,7 +668,7 @@ class Figure(Artist):
 
         The following kwargs are supported:
 
-        %(Axes)s
+        {Axes}
         """
         if not len(args): return
 
@@ -687,9 +688,8 @@ class Figure(Artist):
             if ispolar:
                 if projection is not None and projection != 'polar':
                     raise ValueError(
-                        "polar=True, yet projection='%s'. " +
-                        "Only one of these arguments should be supplied." %
-                        projection)
+                        "polar=True, yet projection='{}'. " +
+                        "Only one of these arguments should be supplied.".format(projection))
                 projection = 'polar'
 
             a = projection_factory(projection, self, rect, **kwargs)
@@ -713,9 +713,9 @@ class Figure(Artist):
         *projection*, which chooses a projection type for the axes.
         (For backward compatibility, *polar=True* may also be
         provided, which is equivalent to *projection='polar'*). Valid
-        values for *projection* are: %(projection_names)s.  Some of these projections
-        support additional *kwargs*, which may be provided to
-        :meth:`add_axes`.
+        values for *projection* are: {projection_names}.  Some of
+        these projections support additional *kwargs*, which may be
+        provided to :meth:`add_axes`.
 
         The :class:`~matplotlib.axes.Axes` instance will be returned.
 
@@ -725,7 +725,7 @@ class Figure(Artist):
 
         The following kwargs are supported:
 
-        %(Axes)s
+        {Axes}
         """
         if not len(args): return
 
@@ -743,9 +743,8 @@ class Figure(Artist):
             if ispolar:
                 if projection is not None and projection != 'polar':
                     raise ValueError(
-                        "polar=True, yet projection='%s'. " +
-                        "Only one of these arguments should be supplied." %
-                        projection)
+                        "polar=True, yet projection='{}'. " +
+                        "Only one of these arguments should be supplied.".format(projection))
                 projection = 'polar'
 
             projection_class = get_projection_class(projection)
@@ -1000,7 +999,7 @@ class Figure(Artist):
 
         kwargs control the :class:`~matplotlib.text.Text` properties:
 
-        %(Text)s
+        {Text}
         """
 
         override = _process_text_args({}, *args, **kwargs)
@@ -1024,7 +1023,7 @@ class Figure(Artist):
         Return the current axes, creating one if necessary
 
         The following kwargs are supported
-        %(Axes)s
+        {Axes}
         """
         ax = self._axstack()
         if ax is not None:
@@ -1033,9 +1032,8 @@ class Figure(Artist):
             if ispolar:
                 if projection is not None and projection != 'polar':
                     raise ValueError(
-                        "polar=True, yet projection='%s'. " +
-                        "Only one of these arguments should be supplied." %
-                        projection)
+                        "polar=True, yet projection='{}'. " +
+                        "Only one of these arguments should be supplied.".format(projection))
                 projection = 'polar'
 
             projection_class = get_projection_class(projection)
@@ -1173,7 +1171,7 @@ class Figure(Artist):
         Create a colorbar for a ScalarMappable instance.
 
         Documentation for the pylab thin wrapper:
-        %(colorbar_doc)s
+        {colorbar_doc}
         """
         if ax is None:
             ax = self.gca()

@@ -31,7 +31,7 @@ def test_override_builtins():
         if key in dir(builtins):
             if (globals()[key] != getattr(builtins, key) and
                 key not in ok_to_override):
-                print("'%s' was overridden in globals()." % key)
+                print("'{}' was overridden in globals().".format(key))
                 overridden = True
 
     assert not overridden

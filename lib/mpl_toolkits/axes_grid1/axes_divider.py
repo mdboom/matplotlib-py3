@@ -139,8 +139,8 @@ class Divider(object):
         if anchor in mtransforms.Bbox.coefs.keys() or len(anchor) == 2:
             self._anchor = anchor
         else:
-            raise ValueError('argument must be among %s' %
-                                ', '.join(mtransforms.BBox.coefs.keys()))
+            raise ValueError('argument must be among {}'.format(
+                             ', '.join(mtransforms.BBox.coefs.keys())))
 
     def get_anchor(self):
         "return the anchor"
@@ -274,7 +274,7 @@ class Divider(object):
             raise ValueError("the position must be one of left, right, bottom, or top")
 
 
-    def add_auto_adjustable_area(self, 
+    def add_auto_adjustable_area(self,
                                  use_axes, pad=0.1,
                                  adjust_dirs=["left", "right", "bottom", "top"],
                                  ):
@@ -378,7 +378,7 @@ class SubplotDivider(Divider):
                 self._subplotspec = GridSpec(rows, cols)[int(num)-1]
                 # num - 1 for converting from MATLAB to python indexing
         else:
-            raise ValueError('Illegal argument(s) to subplot: %s' % (args,))
+            raise ValueError('Illegal argument(s) to subplot: {}'.format(args))
 
 
         # total = rows*cols
@@ -884,7 +884,7 @@ def locatable_axes_factory(axes_class):
 
     new_class = _locatableaxes_classes.get(axes_class)
     if new_class is None:
-        new_class = type("Locatable%s" % (axes_class.__name__),
+        new_class = type("Locatable{}".format(axes_class.__name__),
                          (LocatableAxesBase, axes_class),
                          {'_axes_class': axes_class})
 
@@ -907,10 +907,10 @@ def make_axes_locatable(axes):
 
     return divider
 
-def make_axes_area_auto_adjustable(ax, 
+def make_axes_area_auto_adjustable(ax,
                                    use_axes=None, pad=0.1,
                                    adjust_dirs=["left", "right", "bottom", "top"]):
-    
+
     divider = make_axes_locatable(ax)
 
     if use_axes is None:

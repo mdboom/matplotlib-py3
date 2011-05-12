@@ -142,7 +142,7 @@ def select_step(v1, v2, nv, hour=False, include_last=True):
             levs = levs[0] + np.arange(0, nv+1, 1) * step
         else:
             levs = levs[0] + np.arange(0, nv, 1) * step
-            
+
         n = len(levs)
 
     return np.array(levs), n, factor
@@ -187,10 +187,11 @@ class FormatterHMS(object):
         values = np.abs(values)/15.
 
         if factor == 1:
-            return ["$%s%d^{\mathrm{h}}$" % ({1:"",-1:"-"}[s], int(v),) \
+            return ["${}{:d}^{{\mathrm{{h}}}}$".format({1:"",-1:"-"}[s], int(v))
                     for s, v in zip(ss, values)]
         elif factor == 60:
-            return ["$%d^{\mathrm{h}}\,%02d^{\mathrm{m}}$" % (s*floor(v/60.), v%60) \
+            return ["${:d}^{{\mathrm{{h}}}}\,{:02d}^{{\mathrm{{m}}}}$".format(
+                s*floor(v/60.), v%60)
                     for s, v in zip(ss, values)]
         elif factor == 3600:
             if ss[-1] == -1:
@@ -199,13 +200,13 @@ class FormatterHMS(object):
             else:
                 inverse_order = False
             degree = floor(values[0]/3600.)
-            hm_fmt = "$%d^{\mathrm{h}}\,%02d^{\mathrm{m}}\,"
-            s_fmt = "%02d^{\mathrm{s}}$"
+            hm_fmt = "${:d}^{{\mathrm{{h}}}}\,{:02d}^{{\mathrm{{m}}}}\,"
+            s_fmt = "{:02d}^{{\mathrm{{s}}}}$"
             l_hm_old = ""
             r = []
             for v in values-3600*degree:
-                l_hm = hm_fmt % (ss[0]*degree, floor(v/60.))
-                l_s = s_fmt % (v%60,)
+                l_hm = hm_fmt.format(int(ss[0]*degree), int(floor(v/60.)))
+                l_s = s_fmt.format(int(v%60))
                 if l_hm != l_hm_old:
                     l_hm_old = l_hm
                     l = l_hm + l_s
@@ -219,7 +220,7 @@ class FormatterHMS(object):
         #return [fmt % (ss[0]*degree, floor(v/60.), v%60) \
         #        for s, v in zip(ss, values-3600*degree)]
         else: # factor > 3600.
-            return [r"$%s^{\mathrm{h}}$" % (str(v),) for v in ss*values]
+            return [r"${!s}^{{\mathrm{{h}}}}$".format(v) for v in ss*values]
 
 
 class FormatterDMS(object):
@@ -231,9 +232,9 @@ class FormatterDMS(object):
         ss = np.where(values>0, 1, -1)
         values = np.abs(values)
         if factor == 1:
-            return ["$%d^{\circ}$" % (s*int(v),) for (s, v) in zip(ss, values)]
+            return ["${:d}^{{\circ}}$".format(s*int(v)) for (s, v) in zip(ss, values)]
         elif factor == 60:
-            return ["$%d^{\circ}\,%02d^{\prime}$" % (s*floor(v/60.), v%60) \
+            return ["${:d}^{{\circ}}\,{:02d}^{{\prime}}$".format(int(s*floor(v/60.)), int(v%60)) \
                     for s, v in zip(ss, values)]
         elif factor == 3600:
             if ss[-1] == -1:
@@ -242,13 +243,13 @@ class FormatterDMS(object):
             else:
                 inverse_order = False
             degree = floor(values[0]/3600.)
-            hm_fmt = "$%d^{\circ}\,%02d^{\prime}\,"
-            s_fmt = "%02d^{\prime\prime}$"
+            hm_fmt = "${:d}^{{\circ}}\,{:02d}^{{\prime}}\,"
+            s_fmt = "{:02d}^{{\prime\prime}}$"
             l_hm_old = ""
             r = []
             for v in values-3600*degree:
-                l_hm = hm_fmt % (ss[0]*degree, floor(v/60.))
-                l_s = s_fmt % (v%60,)
+                l_hm = hm_fmt.format(int(ss[0]*degree), int(floor(v/60.)))
+                l_s = s_fmt.format(int(v%60))
                 if l_hm != l_hm_old:
                     l_hm_old = l_hm
                     l = l_hm + l_s
@@ -262,7 +263,7 @@ class FormatterDMS(object):
             #return [fmt % (ss[0]*degree, floor(v/60.), v%60) \
             #        for s, v in zip(ss, values-3600*degree)]
         else: # factor > 3600.
-            return [r"$%s^{\circ}$" % (str(v),) for v in ss*values]
+            return [r"${!s}^{\circ}$".format(v) for v in ss*values]
 
 
 

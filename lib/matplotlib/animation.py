@@ -118,7 +118,7 @@ class Animation(object):
         for idx,data in enumerate(self.new_saved_frame_seq()):
             #TODO: Need to see if turning off blit is really necessary
             self._draw_next_frame(data, blit=False)
-            fname = '%s%04d.png' % (frame_prefix, idx)
+            fname = '{}{:04d}.png'.format(frame_prefix, idx)
             fnames.append(fname)
             self._fig.savefig(fname)
 
@@ -139,14 +139,14 @@ class Animation(object):
         # Returns the command line parameters for subprocess to use
         # ffmpeg to create a movie
         return ['ffmpeg', '-y', '-r', str(fps), '-b', '1800k', '-i',
-            '%s%%04d.png' % frame_prefix, fname]
+            '{}%04d.png'.format(frame_prefix), fname]
 
     def mencoder_cmd(self, fname, fps, codec, frame_prefix):
         # Returns the command line parameters for subprocess to use
         # mencoder to create a movie
-        return ['mencoder', 'mf://%s*.png' % frame_prefix, '-mf',
-            'type=png:fps=%d' % fps, '-ovc', 'lavc', '-lavcopts',
-            'vcodec=%s' % codec, '-oac', 'copy', '-o', fname]
+        return ['mencoder', 'mf://{}*.png'.format(frame_prefix), '-mf',
+            'type=png:fps={:d}'.format(fps), '-ovc', 'lavc', '-lavcopts',
+            'vcodec={}'.format(codec), '-oac', 'copy', '-o', fname]
 
     def _make_movie(self, fname, fps, codec, frame_prefix, cmd_gen=None):
         # Uses subprocess to call the program for assembling frames into a

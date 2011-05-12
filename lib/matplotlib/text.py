@@ -145,7 +145,7 @@ class Text(Artist):
     cached = maxdict(50)
 
     def __str__(self):
-        return "Text(%g,%g,%s)"%(self._y,self._y,repr(self._text))
+        return "Text({:g},{:g},{!r})".format(self._y,self._y,self._text)
 
     def __init__(self,
                  x=0, y=0, text='',
@@ -165,7 +165,7 @@ class Text(Artist):
         with string *text*.
 
         Valid kwargs are
-        %(Text)s
+        {Text}
         """
 
         Artist.__init__(self)
@@ -237,7 +237,7 @@ class Text(Artist):
         if m is None or m in ["anchor", "default"]:
             self._rotation_mode = m
         else:
-            raise ValueError("Unknown rotation_mode : %s" % repr(m))
+            raise ValueError("Unknown rotation_mode : {!r}".format(m))
 
     def get_rotation_mode(self):
         "get text rotation mode"
@@ -790,7 +790,7 @@ class Text(Artist):
         """
         legal = ('center', 'right', 'left')
         if align not in legal:
-            raise ValueError('Horizontal alignment must be one of %s' % str(legal))
+            raise ValueError('Horizontal alignment must be one of {}'.format(legal))
         self._horizontalalignment = align
 
     def set_ma(self, align):
@@ -809,7 +809,7 @@ class Text(Artist):
         """
         legal = ('center', 'right', 'left')
         if align not in legal:
-            raise ValueError('Horizontal alignment must be one of %s' % str(legal))
+            raise ValueError('Horizontal alignment must be one of {}'.format(legal))
         self._multialignment = align
 
     def set_linespacing(self, spacing):
@@ -951,7 +951,7 @@ class Text(Artist):
         """
         legal = ('top', 'bottom', 'center', 'baseline')
         if align not in legal:
-            raise ValueError('Vertical alignment must be one of %s' % str(legal))
+            raise ValueError('Vertical alignment must be one of {}'.format(legal))
 
         self._verticalalignment = align
 

@@ -219,7 +219,7 @@ def is_color_like(c):
 
 def rgb2hex(rgb):
     'Given an rgb or rgba sequence of 0-1 floats, return the hex string'
-    return '#%02x%02x%02x' % tuple([round(val*255) for val in rgb[:3]])
+    return '#{:02x}{:02x}{:02x}'.format(*[round(val*255) for val in rgb[:3]])
 
 hexColorPattern = re.compile("\A#[a-fA-F0-9]{6}\Z")
 
@@ -231,7 +231,7 @@ def hex2color(s):
     if not isinstance(s, basestring):
         raise TypeError('hex2color requires a string argument')
     if hexColorPattern.match(s) is None:
-        raise ValueError('invalid hex color string "%s"' % s)
+        raise ValueError('invalid hex color string "{}"'.format(s))
     return tuple([int(n, 16)/255.0 for n in (s[1:3], s[3:5], s[5:7])])
 
 class ColorConverter:
@@ -278,8 +278,7 @@ class ColorConverter:
             except KeyError: pass
             except TypeError:
                 raise ValueError(
-                      'to_rgb: arg "%s" is unhashable even inside a tuple'
-                                    % (str(arg),))
+                      'to_rgb: arg "{}" is unhashable even inside a tuple'.format(arg))
 
         try:
             if cbook.is_string_like(arg):
@@ -298,7 +297,7 @@ class ColorConverter:
             elif cbook.iterable(arg):
                 if len(arg) > 4 or len(arg) < 3:
                     raise ValueError(
-                           'sequence length is %d; must be 3 or 4'%len(arg))
+                           'sequence length is {:d}; must be 3 or 4'.format(len(arg)))
                 color = tuple(arg[:3])
                 if [x for x in color if (float(x) < 0) or  (x > 1)]:
                     # This will raise TypeError if x is not a number.
@@ -309,7 +308,7 @@ class ColorConverter:
             self.cache[arg] = color
 
         except (KeyError, ValueError, TypeError) as exc:
-            raise ValueError('to_rgb: Invalid rgb arg "%s"\n%s' % (str(arg), exc))
+            raise ValueError('to_rgb: Invalid rgb arg "{}"\n{}'.format(arg, exc))
             # Error messages could be improved by handling TypeError
             # separately; but this should be rare and not too hard
             # for the user to figure out as-is.
@@ -351,7 +350,7 @@ class ColorConverter:
                 alpha = 1.0
             return r,g,b,alpha
         except (TypeError, ValueError) as exc:
-            raise ValueError('to_rgba: Invalid rgba arg "%s"\n%s' % (str(arg), exc))
+            raise ValueError('to_rgba: Invalid rgba arg "{}"\n{}'.format(arg, exc))
 
     def to_rgba_array(self, c, alpha=None):
         """
@@ -366,7 +365,7 @@ class ColorConverter:
             nc = len(c)
         except TypeError:
             raise ValueError(
-                "Cannot convert argument type %s to rgba array" % type(c))
+                "Cannot convert argument type {} to rgba array".format(type(c)))
         try:
             if nc == 0 or c.lower() == 'none':
                 return np.zeros((0,4), dtype=np.float)

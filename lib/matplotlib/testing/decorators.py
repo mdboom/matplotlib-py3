@@ -92,7 +92,7 @@ class ImageComparisonTest(CleanupTest):
             for extension in self._extensions:
                 will_fail = not extension in comparable_formats()
                 if will_fail:
-                    fail_msg = 'Cannot compare %s files on this system' % extension
+                    fail_msg = 'Cannot compare {} files on this system'.format(extension)
                 else:
                     fail_msg = 'No failure expected'
 
@@ -103,7 +103,7 @@ class ImageComparisonTest(CleanupTest):
                     shutil.copyfile(orig_expected_fname, expected_fname)
                 else:
                     will_fail = True
-                    fail_msg = 'Do not have baseline image %s' % expected_fname
+                    fail_msg = 'Do not have baseline image {}'.format(expected_fname)
 
                 @knownfailureif(
                     will_fail, fail_msg,
@@ -113,13 +113,13 @@ class ImageComparisonTest(CleanupTest):
 
                     if not os.path.exists(expected_fname):
                         raise ImageComparisonFailure(
-                            'image does not exist: %s' % expected_fname)
+                            'image does not exist: {}'.format(expected_fname))
 
                     err = compare_images(expected_fname, actual_fname, self._tol, in_decorator=True)
                     if err:
                         raise ImageComparisonFailure(
-                            'images not close: %(actual)s vs. %(expected)s '
-                            '(RMS %(rms).3f)'%err)
+                            'images not close: {actual} vs. {expected} '
+                            '(RMS {rms:.3f})'.format(**err))
 
                 yield (do_test,)
 

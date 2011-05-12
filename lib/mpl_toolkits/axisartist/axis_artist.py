@@ -1141,13 +1141,13 @@ class AxisArtist(martist.Artist):
 
 
         major_tick_size = kw.get("major_tick_size",
-                                 rcParams['%s.major.size'%axis_name])
+                                 rcParams['{}.major.size'.format(axis_name)])
         major_tick_pad = kw.get("major_tick_pad",
-                                rcParams['%s.major.pad'%axis_name])
+                                rcParams['{}.major.pad'.format(axis_name)])
         minor_tick_size = kw.get("minor_tick_size",
-                                 rcParams['%s.minor.size'%axis_name])
+                                 rcParams['{}.minor.size'.format(axis_name)])
         minor_tick_pad = kw.get("minor_tick_pad",
-                                rcParams['%s.minor.pad'%axis_name])
+                                rcParams['{}.minor.pad'.format(axis_name)])
 
         self.major_ticks = Ticks(major_tick_size,
                                  axis=self.axis,

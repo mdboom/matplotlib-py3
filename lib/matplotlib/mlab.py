@@ -374,7 +374,7 @@ def psd(x, NFFT=256, Fs=2, detrend=detrend_none, window=window_hanning,
     *x*
         Array or sequence containing the data
 
-    %(PSD)s
+    {PSD}
 
     Returns the tuple (*Pxx*, *freqs*).
 
@@ -406,7 +406,7 @@ def csd(x, y, NFFT=256, Fs=2, detrend=detrend_none, window=window_hanning,
     *x*, *y*
         Array or sequence containing the data
 
-    %(PSD)s
+    {PSD}
 
     Returns the tuple (*Pxy*, *freqs*).
 
@@ -434,7 +434,7 @@ def specgram(x, NFFT=256, Fs=2, detrend=detrend_none, window=window_hanning,
     frequencie is returned.  If *x* is complex then the complete
     spectrum is returned.
 
-    %(PSD)s
+    {PSD}
 
     Returns a tuple (*Pxx*, *freqs*, *t*):
 
@@ -479,7 +479,7 @@ def cohere(x, y, NFFT=256, Fs=2, detrend=detrend_none, window=window_hanning,
     *x*, *y*
         Array or sequence containing the data
 
-    %(PSD)s
+    {PSD}
 
     The return value is the tuple (*Cxy*, *f*), where *f* are the
     frequencies of the coherence vector. For cohere, scaling the
@@ -864,7 +864,7 @@ class PCA:
         ndims = len(x.shape)
 
         if (x.shape[-1]!=self.numcols):
-            raise ValueError('Expected an array with dims[-1]==%d'%self.numcols)
+            raise ValueError('Expected an array with dims[-1]=={:d}'.format(self.numcols))
 
 
         Y = np.dot(self.Wt, self.center(x).T).T
@@ -1306,6 +1306,7 @@ def movavg(x,n):
     w[:] = 1.0/n
     return np.convolve(x, w, mode='valid')
 
+# PY3K TODO: Support new-style formatting
 def save(fname, X, fmt='%.18e',delimiter=' '):
     """
     Save the data in *X* to file *fname* using *fmt* string to convert the
@@ -1926,9 +1927,9 @@ def rec_join(key, r1, r2, jointype='inner', defaults=None, r1postfix='1', r2post
 
     for name in key:
         if name not in r1.dtype.names:
-            raise ValueError('r1 does not have key field %s'%name)
+            raise ValueError('r1 does not have key field {}'.format(name))
         if name not in r2.dtype.names:
-            raise ValueError('r2 does not have key field %s'%name)
+            raise ValueError('r2 does not have key field {}'.format(name))
 
     def makekey(row):
         return tuple([row[name] for name in key])
@@ -1994,7 +1995,7 @@ def rec_join(key, r1, r2, jointype='inner', defaults=None, r1postfix='1', r2post
     if defaults is not None:
         for thiskey in defaults:
             if thiskey not in newdtype.names:
-                warnings.warn('rec_join defaults key="%s" not in new dtype names "%s"'%(
+                warnings.warn('rec_join defaults key="{}" not in new dtype names "{}"'.format(
                     thiskey, newdtype.names))
 
     for name in newdtype.names:
@@ -2076,8 +2077,8 @@ def recs_join(key, name, recs, jointype='outer', missing=0., postfixes=None):
                 results.append([rowkey] + map(extract, row))
 
     if postfixes is None:
-        postfixes = ['%d'%i for i in range(len(recs))]
-    names = ",".join([key] + ["%s%s" % (name, postfix) for postfix in postfixes])
+        postfixes = [str(i) for i in range(len(recs))]
+    names = ",".join([key] + ["{}{}".format(name, postfix) for postfix in postfixes])
     return np.rec.fromrecords(results, names=names)
 
 
@@ -2282,12 +2283,12 @@ def csv2rec(fname, comments='#', skiprows=0, checkrows=0, delimiter=',',
             item = item.strip().lower().replace(' ', '_')
             item = ''.join([c for c in item if c not in delete])
             if not len(item):
-                item = 'column%d'%i
+                item = 'column{:d}'.format(i)
 
             item = itemd.get(item, item)
             cnt = seen.get(item, 0)
             if cnt>0:
-                names.append(item + '_%d'%cnt)
+                names.append("{}_{:d}".format(item, cnt))
             else:
                 names.append(item)
             seen[item] = cnt+1
@@ -2355,11 +2356,7 @@ class FormatString(FormatObj):
         val = repr(x)
         return val[1:-1]
 
-#class FormatString(FormatObj):
-#    def tostr(self, x):
-#        return '"%r"'%self.toval(x)
-
-
+# PY3K TODO: Support new-style formatting
 
 class FormatFormatStr(FormatObj):
     def __init__(self, fmt):
@@ -2390,7 +2387,7 @@ class FormatFloat(FormatFormatStr):
 class FormatInt(FormatObj):
 
     def tostr(self, x):
-        return '%d'%int(x)
+        return str(int(x))
 
     def toval(self, x):
         return int(x)
@@ -2705,9 +2702,9 @@ def griddata(x,y,z,xi,yi,interp='nn'):
         _use_natgrid = False
     if not griddata._reported:
         if _use_natgrid:
-            verbose.report('using natgrid version %s' % __version__)
+            verbose.report('using natgrid version {}'.format(__version__))
         else:
-            verbose.report('using delaunay version %s' % __version__)
+            verbose.report('using delaunay version {}'.format(__version__))
         griddata._reported = True
     if xi.ndim != yi.ndim:
         raise TypeError("inputs xi and yi must have same number of dimensions (1 or 2)")

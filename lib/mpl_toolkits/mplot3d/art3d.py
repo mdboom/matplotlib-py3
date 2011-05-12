@@ -550,7 +550,7 @@ def get_colors(c, num):
     elif iscolor(c[0]):
         return [c[0]] * num
     else:
-        raise ValueError, 'unknown color format %s' % c
+        raise ValueError('unknown color format {}'.format(c))
 
 def zalpha(colors, zs):
     """Modify the alphas of the color list according to depth"""

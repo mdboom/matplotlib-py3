@@ -125,15 +125,15 @@ font_tests = []
 for fonts, chars in font_test_specs:
     wrapper = [' '.join(fonts), ' $']
     for font in fonts:
-        wrapper.append(r'\%s{' % font)
-    wrapper.append('%s')
+        wrapper.append(r'\{}{{'.format(font))
+    wrapper.append('{}')
     for font in fonts:
         wrapper.append('}')
     wrapper.append('$')
     wrapper = ''.join(wrapper)
 
     for set in chars:
-        font_tests.append(wrapper % set)
+        font_tests.append(wrapper.format(set))
 
 def make_set(basename, fontset, tests):
     def make_test(filename, test):
@@ -151,8 +151,8 @@ def make_set(basename, fontset, tests):
     # easily from the commandline and so each test will have its own
     # result.
     for i, test in enumerate(tests):
-        filename = '%s_%s_%02d' % (basename, fontset, i)
-        globals()['test_%s' % filename] = make_test(filename, test)
+        filename = '{}_{}_{:02d}'.format(basename, fontset, i)
+        globals()['test_{}'.format(filename)] = make_test(filename, test)
 
 make_set('mathtext', 'cm', math_tests)
 make_set('mathtext', 'stix', math_tests)

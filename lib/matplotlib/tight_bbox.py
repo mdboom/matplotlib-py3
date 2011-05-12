@@ -53,7 +53,7 @@ def adjust_bbox(fig, format, bbox_inches):
         adjust_bbox_handler(fig, bbox_inches)
         return restore_bbox
     else:
-        warnings.warn("bbox_inches option for %s backend is not implemented yet." % (format))
+        warnings.warn("bbox_inches option for {} backend is not implemented yet.".format(format))
         return None
 
 

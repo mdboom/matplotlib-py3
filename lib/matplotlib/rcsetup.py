@@ -46,14 +46,14 @@ class ValidateInStrings:
     def __call__(self, s):
         if self.ignorecase: s = s.lower()
         if s in self.valid: return self.valid[s]
-        raise ValueError('Unrecognized %s string "%s": valid strings are %s'
-                         % (self.key, s, self.valid.values()))
+        raise ValueError('Unrecognized {} string "{}": valid strings are {}'.format(
+            self.key, s, self.valid.values()))
 
 def validate_path_exists(s):
     'If s is a path, return s, else False'
     if os.path.exists(s): return s
     else:
-        raise RuntimeError('"%s" should be a path but it does not exist'%s)
+        raise RuntimeError('"{}" should be a path but it does not exist'.format(s))
 
 def validate_bool(b):
     'Convert b to a boolean or raise'
@@ -62,7 +62,7 @@ def validate_bool(b):
     if b in ('t', 'y', 'yes', 'on', 'true', '1', 1, True): return True
     elif b in ('f', 'n', 'no', 'off', 'false', '0', 0, False): return False
     else:
-        raise ValueError('Could not convert "%s" to boolean' % b)
+        raise ValueError('Could not convert "{}" to boolean'.format(b))
 
 def validate_bool_maybe_none(b):
     'Convert b to a boolean or raise'
@@ -72,19 +72,19 @@ def validate_bool_maybe_none(b):
     if b in ('t', 'y', 'yes', 'on', 'true', '1', 1, True): return True
     elif b in ('f', 'n', 'no', 'off', 'false', '0', 0, False): return False
     else:
-        raise ValueError('Could not convert "%s" to boolean' % b)
+        raise ValueError('Could not convert "{}" to boolean'.format(b))
 
 def validate_float(s):
     'convert s to float or raise'
     try: return float(s)
     except ValueError:
-        raise ValueError('Could not convert "%s" to float' % s)
+        raise ValueError('Could not convert "{}" to float'.format(s))
 
 def validate_int(s):
     'convert s to int or raise'
     try: return int(s)
     except ValueError:
-        raise ValueError('Could not convert "%s" to int' % s)
+        raise ValueError('Could not convert "{}" to int'.format(s))
 
 def validate_fonttype(s):
     'confirm that this is a Postscript of PDF font type that we know how to convert to'
@@ -95,10 +95,10 @@ def validate_fonttype(s):
     except ValueError:
         if s.lower() in fonttypes.iterkeys():
             return fonttypes[s.lower()]
-        raise ValueError('Supported Postscript/PDF font types are %s' % fonttypes.keys())
+        raise ValueError('Supported Postscript/PDF font types are {}'.format(fonttypes.keys()))
     else:
         if fonttype not in fonttypes.itervalues():
-            raise ValueError('Supported Postscript/PDF font types are %s' % fonttypes.values())
+            raise ValueError('Supported Postscript/PDF font types are {}'.format(fonttypes.values()))
         return fonttype
 
 #validate_backend = ValidateInStrings('backend', all_backends, ignorecase=True)
@@ -134,7 +134,7 @@ class validate_nseq_float:
         if type(s) is str:
             ss = s.split(',')
             if len(ss) != self.n:
-                raise ValueError('You must supply exactly %d comma separated values'%self.n)
+                raise ValueError('You must supply exactly {:d} comma separated values'.format(self.n))
             try:
                 return [float(val) for val in ss]
             except ValueError:
@@ -142,7 +142,7 @@ class validate_nseq_float:
         else:
             assert type(s) in (list,tuple)
             if len(s) != self.n:
-                raise ValueError('You must supply exactly %d values'%self.n)
+                raise ValueError('You must supply exactly {:d} values'.format(self.n))
             return [float(val) for val in s]
 
 class validate_nseq_int:
@@ -153,7 +153,7 @@ class validate_nseq_int:
         if type(s) is str:
             ss = s.split(',')
             if len(ss) != self.n:
-                raise ValueError('You must supply exactly %d comma separated values'%self.n)
+                raise ValueError('You must supply exactly {:d} comma separated values'.format(self.n))
             try:
                 return [int(val) for val in ss]
             except ValueError:
@@ -161,7 +161,7 @@ class validate_nseq_int:
         else:
             assert type(s) in (list,tuple)
             if len(s) != self.n:
-                raise ValueError('You must supply exactly %d values'%self.n)
+                raise ValueError('You must supply exactly {:d} values'.format(self.n))
             return [int(val) for val in s]
 
 
@@ -195,7 +195,7 @@ def validate_color(s):
     if not msg and is_color_like(colorarg):
         return colorarg
 
-    raise ValueError('%s does not look like a color arg%s'%(s, msg))
+    raise ValueError('{} does not look like a color arg{}'.format(s, msg))
 
 def validate_colorlist(s):
     'return a list of colorspecs'
@@ -318,17 +318,17 @@ class ValidateInterval:
 
     def __call__(self, s):
         try: s = float(s)
-        except: raise RuntimeError('Value must be a float; found "%s"'%s)
+        except: raise RuntimeError('Value must be a float; found "{}"'.format(s))
 
         if self.cmin and s<self.vmin:
-            raise RuntimeError('Value must be >= %f; found "%f"'%(self.vmin, s))
+            raise RuntimeError('Value must be >= {:f}; found "{:f}"'.format(self.vmin, s))
         elif not self.cmin and s<=self.vmin:
-            raise RuntimeError('Value must be > %f; found "%f"'%(self.vmin, s))
+            raise RuntimeError('Value must be > {:f}; found "{:f}"'.format(self.vmin, s))
 
         if self.cmax and s>self.vmax:
-            raise RuntimeError('Value must be <= %f; found "%f"'%(self.vmax, s))
+            raise RuntimeError('Value must be <= {:f}; found "{:f}"'.format(self.vmax, s))
         elif not self.cmax and s>=self.vmax:
-            raise RuntimeError('Value must be < %f; found "%f"'%(self.vmax, s))
+            raise RuntimeError('Value must be < {:f}; found "{:f}"'.format(self.vmax, s))
         return s
 
 
@@ -566,4 +566,4 @@ if __name__ == '__main__':
     rc['datapath'][0] = '/'
     for key in rc:
         if not rc[key][1](rc[key][0]) == rc[key][0]:
-            print("%s: %s != %s"%(key, rc[key][1](rc[key][0]), rc[key][0]))
+            print("{}: {} != {}".format(key, rc[key][1](rc[key][0]), rc[key][0]))

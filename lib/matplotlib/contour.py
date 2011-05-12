@@ -896,7 +896,7 @@ class ContourSet(cm.ScalarMappable, ContourLabeler):
                         lev = np.asarray(level_arg).astype(np.float64)
                 except:
                     raise TypeError(
-                        "Last %s arg must give levels; see help(%s)" % (fn,fn))
+                        "Last {0} arg must give levels; see help({0})".format(fn))
             if self.filled and len(lev) < 2:
                 raise ValueError("Filled contours require at least 2 levels.")
             self.levels = lev
@@ -1165,7 +1165,7 @@ class QuadContourSet(ContourSet):
             x,y,z = self._check_xyz(args[:3], kwargs)
             args = args[3:]
         else:
-            raise TypeError("Too many arguments to %s; see help(%s)" % (fn,fn))
+            raise TypeError("Too many arguments to {0}; see help({0})".format(fn))
         z = ma.masked_invalid(z, copy=False)
         self.zmax = ma.maximum(z)
         self.zmin = ma.minimum(z)

@@ -32,9 +32,9 @@ class GeoAxes(Axes):
             degrees = (x / np.pi) * 180.0
             degrees = round(degrees / self._round_to) * self._round_to
             if rcParams['text.usetex'] and not rcParams['text.latex.unicode']:
-                return r"$%0.0f^\circ$" % degrees
+                return r"${:0.0f}^\circ$".format(degrees)
             else:
-                return u"%0.0f\u00b0" % degrees
+                return u"{:0.0f}\u00b0".format(degrees)
 
     RESOLUTION = 75
 
@@ -175,7 +175,7 @@ class GeoAxes(Axes):
             ew = 'E'
         else:
             ew = 'W'
-        return u'%f\u00b0%s, %f\u00b0%s' % (abs(lat), ns, abs(long), ew)
+        return u'{:f}\u00b0{}, {:f}\u00b0{}'.format(abs(lat), ns, abs(long), ew)
 
     def set_longitude_grid(self, degrees):
         """

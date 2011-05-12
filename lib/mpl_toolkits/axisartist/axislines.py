@@ -151,7 +151,7 @@ class AxisArtistHelper(object):
             self._loc = loc
 
             if loc not in ["left", "right", "bottom", "top"]:
-                raise ValueError("%s" % loc)
+                raise ValueError(str(loc))
 
             if nth_coord is None:
                 if loc in ["left", "right"]:
@@ -378,7 +378,7 @@ class AxisArtistHelperRectlinear:
                 angle_normal, angle_tangent = 90, 0
             else:
                 angle_normal, angle_tangent = 0, 90
-                
+
             #angle = 90 - 90 * self.nth_coord
 
             major = self.axis.major
@@ -459,7 +459,7 @@ class GridHelperRectlinear(GridHelperBase):
                        offset=None,
                        axes=None,
                        ):
- 
+
         if axes is None:
             warnings.warn("'new_fixed_axis' explicitly requires the axes keyword.")
             axes = self.axes

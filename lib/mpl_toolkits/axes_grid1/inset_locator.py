@@ -216,7 +216,7 @@ class BboxConnector(Patch):
         *path* is a :class:`matplotlib.path.Path` object.
 
         Valid kwargs are:
-        %(Patch)s
+        {Patch}
 
         .. seealso::
 

@@ -83,7 +83,7 @@ class Collection(artist.Artist, cm.ScalarMappable):
         """
         Create a Collection
 
-        %(Collection)s
+        {Collection}
         """
         artist.Artist.__init__(self)
         cm.ScalarMappable.__init__(self, norm, cmap)
@@ -261,8 +261,8 @@ class Collection(artist.Artist, cm.ScalarMappable):
                 # pick, the normal route; the check is here in case
                 # it is called through some unanticipated route.
                 warnings.warn(
-                    "Collection picker %s could not be converted to float"
-                                        % self._picker)
+                    "Collection picker {} could not be converted to float".format(
+                        self._picker))
                 pickradius = self._pickradius
 
         transform, transOffset, offsets, paths = self._prepare_points()
@@ -366,7 +366,7 @@ class Collection(artist.Artist, cm.ScalarMappable):
             else:
                 raise ValueError()
         except ValueError:
-            raise ValueError('Do not know how to convert %s to dashes'%ls)
+            raise ValueError('Do not know how to convert {} to dashes'.format(ls))
         self._linestyles = dashes
 
     def set_linestyles(self, ls):
@@ -580,7 +580,7 @@ class PathCollection(Collection):
         *paths* is a sequence of :class:`matplotlib.path.Path`
         instances.
 
-        %(Collection)s
+        {Collection}
         """
 
         Collection.__init__(self, **kwargs)
@@ -610,7 +610,7 @@ class PolyCollection(Collection):
 
         *closed*, when *True*, will explicitly close the polygon.
 
-        %(Collection)s
+        {Collection}
         """
         Collection.__init__(self,**kwargs)
         self._sizes = sizes
@@ -666,7 +666,7 @@ class BrokenBarHCollection(PolyCollection):
         *yrange*
             *ymin*, *ywidth*
 
-        %(Collection)s
+        {Collection}
         """
         ymin, ywidth = yrange
         ymax = ymin + ywidth
@@ -715,7 +715,7 @@ class RegularPolyCollection(Collection):
             gives the area of the circle circumscribing the
             regular polygon in points^2
 
-        %(Collection)s
+        {Collection}
 
         Example: see :file:`examples/dynamic_collection.py` for
         complete example::
@@ -940,7 +940,7 @@ class CircleCollection(Collection):
         *sizes*
             Gives the area of the circle in points^2
 
-        %(Collection)s
+        {Collection}
         """
         Collection.__init__(self,**kwargs)
         self._sizes = sizes
@@ -992,7 +992,7 @@ class EllipseCollection(Collection):
 
         Additional kwargs inherited from the base :class:`Collection`:
 
-        %(Collection)s
+        {Collection}
         """
         Collection.__init__(self,**kwargs)
         self._widths = 0.5 * np.asarray(widths).ravel()
@@ -1028,7 +1028,7 @@ class EllipseCollection(Collection):
         elif self._units == 'dots':
             sc = 1.0
         else:
-            raise ValueError('unrecognized units: %s' % self._units)
+            raise ValueError('unrecognized units: {}'.format(self._units))
 
         _affine = transforms.Affine2D
         for x, y, a in zip(self._widths, self._heights, self._angles):

@@ -97,11 +97,11 @@ def make_external_conversion_command(cmd):
       stdout, stderr = pipe.communicate()
       errcode = pipe.wait()
       if not os.path.exists(newname) or errcode:
-         msg = "Conversion command failed:\n%s\n" % ' '.join(cmd)
+         msg = "Conversion command failed:\n{}\n".format(' '.join(cmd))
          if stdout:
-            msg += "Standard output:\n%s\n" % stdout
+            msg += "Standard output:\n{}\n".format(stdout)
          if stderr:
-            msg += "Standard error:\n%s\n" % stderr
+            msg += "Standard error:\n{}\n".format(stderr)
          raise IOError, msg
    return convert
 
@@ -134,11 +134,11 @@ def convert(filename):
    '''
    base, extension = filename.rsplit('.', 1)
    if extension not in converter:
-      raise ImageComparisonFailure("Don't know how to convert %s files to png" % extension)
+      raise ImageComparisonFailure(
+         "Don't know how to convert {} files to png".format(extension))
    newname = base + '_' + extension + '.png'
    if not os.path.exists(filename):
-      raise IOError("'%s' does not exist" % filename)
-      raise IOError, "'%s' does not exist" % filename
+      raise IOError("'{}' does not exist".format(filename))
    converter[extension](filename, newname)
    return newname
 
@@ -149,7 +149,7 @@ def verify(filename):
    Verify the file through some sort of verification tool.
    """
    if not os.path.exists(filename):
-      raise IOError("'%s' does not exist" % filename)
+      raise IOError("'{}' does not exist".format(filename))
    base, extension = filename.rsplit('.', 1)
    verifier = verifiers.get(extension, None)
    if verifier is not None:
@@ -158,11 +158,11 @@ def verify(filename):
       stdout, stderr = pipe.communicate()
       errcode = pipe.wait()
       if errcode != 0:
-         msg = "File verification command failed:\n%s\n" % ' '.join(cmd)
+         msg = "File verification command failed:\n{}\n".format(' '.join(cmd))
          if stdout:
-            msg += "Standard output:\n%s\n" % stdout
+            msg += "Standard output:\n{}\n".format(stdout)
          if stderr:
-            msg += "Standard error:\n%s\n" % stderr
+            msg += "Standard error:\n{}\n".format(stderr)
          raise IOError(msg)
 
 # Turning this off, because it seems to cause multiprocessing issues

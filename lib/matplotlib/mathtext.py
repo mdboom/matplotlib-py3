@@ -86,8 +86,7 @@ Type1 symbol name (i.e. 'phi').
     try:# Is symbol a TeX symbol (i.e. \alpha)
         return tex2uni[symbol.strip("\\")]
     except KeyError:
-        message = """'%(symbol)s' is not a valid Unicode character or
-TeX/Type1 symbol"""%locals()
+        message = "'{}' is not a valid Unicode character or TeX/Type1 symbol".format(symbol)
         raise ValueError(message)
 
 def unichr_safe(index):
@@ -250,20 +249,20 @@ class MathtextBackendPs(MathtextBackend):
         symbol_name     = info.symbol_name
 
         if (postscript_name, fontsize) != self.lastfont:
-            ps = """/%(postscript_name)s findfont
-%(fontsize)s scalefont
+            ps = """/{postscript_name} findfont
+{fontsize} scalefont
 setfont
-""" % locals()
+""".format(**locals())
             self.lastfont = postscript_name, fontsize
             self.pswriter.write(ps)
 
-        ps = """%(ox)f %(oy)f moveto
-/%(symbol_name)s glyphshow\n
-""" % locals()
+        ps = """{ox:f} {oy:f} moveto
+/{symbol_name} glyphshow\n
+""".format(**locals())
         self.pswriter.write(ps)
 
     def render_rect_filled(self, x1, y1, x2, y2):
-        ps = "%f %f %f %f rectfill\n" % (x1, self.height - y2, x2 - x1, y2 - y1)
+        ps = "{:f} {:f} {:f} {:f} rectfill\n".format(x1, self.height - y2, x2 - x1, y2 - y1)
         self.pswriter.write(ps)
 
     def get_results(self, box, used_characters):
@@ -825,8 +824,8 @@ class UnicodeFonts(TruetypeFonts):
                 found_symbol = True
             except ValueError:
                 uniindex = ord('?')
-                warn("No TeX to unicode mapping for '%s'" %
-                     sym.encode('ascii', 'backslashreplace'),
+                warn("No TeX to unicode mapping for '{}'".format(
+                     sym.encode('ascii', 'backslashreplace')),
                      MathTextWarning)
 
         fontname, uniindex = self._map_virtual_font(
@@ -866,8 +865,8 @@ class UnicodeFonts(TruetypeFonts):
             else:
                 if fontname in ('it', 'regular') and isinstance(self, StixFonts):
                     return self._get_glyph('rm', font_class, sym, fontsize)
-                warn("Font '%s' does not have a glyph for '%s' [U%x]" %
-                     (new_fontname, sym.encode('ascii', 'backslashreplace'), uniindex),
+                warn("Font '{}' does not have a glyph for '{}' [U{:x}]".format(
+                    new_fontname, sym.encode('ascii', 'backslashreplace'), uniindex),
                      MathTextWarning)
                 warn("Substituting with a dummy symbol.", MathTextWarning)
                 fontname = 'rm'
@@ -1082,7 +1081,7 @@ class StandardPsFonts(Fonts):
             num = ord(glyph)
             found_symbol = True
         else:
-            warn("No TeX to built-in Postscript mapping for '%s'" % sym,
+            warn("No TeX to built-in Postscript mapping for '{}'".format(sym),
                  MathTextWarning)
 
         slanted = (fontname == 'it')
@@ -1092,8 +1091,8 @@ class StandardPsFonts(Fonts):
             try:
                 symbol_name = font.get_name_char(glyph)
             except KeyError:
-                warn("No glyph in standard Postscript font '%s' for '%s'" %
-                     (font.postscript_name, sym),
+                warn("No glyph in standard Postscript font '{}' for '{}'".format(
+                    font.postscript_name, sym),
                      MathTextWarning)
                 found_symbol = False
 
@@ -1296,7 +1295,7 @@ class Char(Node):
         self._update_metrics()
 
     def __internal_repr__(self):
-        return '`%s`' % self.c
+        return '`{}`'.format(self.c)
 
     def _update_metrics(self):
         metrics = self._metrics = self.font_output.get_metrics(
@@ -1392,7 +1391,7 @@ class List(Box):
         self.glue_order   = 0    # The order of infinity (0 - 3) for the glue
 
     def __repr__(self):
-        return '[%s <%.02f %.02f %.02f %.02f> %s]' % (
+        return '[{} <{:.02f} {:.02f} {:.02f} {:.02f}> {}]'.format(
             self.__internal_repr__(),
             self.width, self.height,
             self.depth, self.shift_amount,
@@ -1421,7 +1420,7 @@ class List(Box):
             self.glue_ratio = 0.
         if o == 0:
             if len(self.children):
-                warn("%s %s: %r" % (error_type, self.__class__.__name__, self),
+                warn("{} {}: {!r}".format(error_type, self.__class__.__name__, self),
                      MathTextWarning)
 
     def shrink(self):
@@ -1793,7 +1792,7 @@ class Kern(Node):
         self.width = width
 
     def __repr__(self):
-        return "k%.02f" % self.width
+        return "k{:.02f}".format(self.width)
 
     def shrink(self):
         Node.shrink(self)
@@ -2162,7 +2161,7 @@ class Parser(object):
                      ).setParseAction(self.customspace).setName('customspace')
 
         unicode_range = u"\U00000080-\U0001ffff"
-        symbol       =(Regex(UR"([a-zA-Z0-9 +\-*/<>=:,.;!'@()\[\]|%s])|(\\[%%${}\[\]_|])" % unicode_range)
+        symbol       =(Regex(UR"([a-zA-Z0-9 +\-*/<>=:,.;!'@()\[\]|{}])|(\\[%${{}}\[\]_|])".format(unicode_range))
                      | (Combine(
                          bslash
                        + oneOf(tex2uni.keys())
@@ -2445,7 +2444,7 @@ class Parser(object):
         try:
             char = Char(c, self.get_state())
         except ValueError:
-            raise ParseFatalException("Unknown symbol: %s" % c)
+            raise ParseFatalException("Unknown symbol: {}".format(c))
 
         if c in self._spaced_symbols:
             return [Hlist( [self._make_space(0.2),

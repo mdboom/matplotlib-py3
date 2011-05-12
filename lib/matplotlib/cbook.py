@@ -248,7 +248,7 @@ class CallbackRegistry:
         if s not in self.signals:
             signals = list(self.signals)
             signals.sort()
-            raise ValueError('Unknown signal "%s"; valid signals are %s'%(s, signals))
+            raise ValueError('Unknown signal "{}"; valid signals are {}'.format(s, signals))
 
     def connect(self, s, func):
         """
@@ -363,10 +363,10 @@ class silent_list(list):
         if seq is not None: self.extend(seq)
 
     def __repr__(self):
-        return '<a list of %d %s objects>' % (len(self), self.type)
+        return '<a list of {:d} {} objects>'.format(len(self), self.type)
 
     def __str__(self):
-        return '<a list of %d %s objects>' % (len(self), self.type)
+        return '<a list of {:d} {} objects>'.format(len(self), self.type)
 
 def strip_math(s):
     'remove latex formatting from mathtext'
@@ -394,7 +394,8 @@ class Bunch:
 
     def __repr__(self):
         keys = self.__dict__.iterkeys()
-        return 'Bunch(%s)'%', '.join(['%s=%s'%(k,self.__dict__[k]) for k in keys])
+        return 'Bunch({})'.format(
+            ', '.join(['{}={}'.format(k, self.__dict__[k]) for k in keys])
 
 def unique(x):
     'Return a list of unique elements of *x*'
@@ -538,16 +539,16 @@ def _get_data_server(cache_dir, baseurl):
                 (set(os.path.join(dirpath, fn) for fn in filenames)
                     for (dirpath, _, filenames) in os.walk(self.cache_dir)))
             matplotlib.verbose.report(
-                'ViewVCCachedServer: files listed in cache.pck: %s' % listed,
+                'ViewVCCachedServer: files listed in cache.pck: {}'.format(listed),
                 'debug')
             matplotlib.verbose.report(
-                'ViewVCCachedServer: files in cache directory: %s' % existing,
+                'ViewVCCachedServer: files in cache directory: {}'.format(existing),
                 'debug')
 
             for path in existing - listed - \
                     set([self.in_cache_dir('cache.pck')]):
                 matplotlib.verbose.report(
-                    'ViewVCCachedServer:remove_stale_files: removing %s'%path,
+                    'ViewVCCachedServer:remove_stale_files: removing {}'.format(path),
                     level='debug')
                 os.remove(path)
 
@@ -600,8 +601,8 @@ def _get_data_server(cache_dir, baseurl):
             url = req.get_full_url()
             fn, _, _ = self.cache[url]
             matplotlib.verbose.report(
-                'ViewVCCachedServer: reading data file from cache file "%s"'
-                %fn, 'debug')
+                'ViewVCCachedServer: reading data file from cache file "{}"'.format(
+                    fn), 'debug')
             file = open(fn, 'rb')
             handle = urllib2.addinfourl(file, hdrs, url)
             handle.code = 304
@@ -612,8 +613,8 @@ def _get_data_server(cache_dir, baseurl):
             Update the cache with the returned file.
             """
             matplotlib.verbose.report(
-                'ViewVCCachedServer: received response %d: %s'
-                % (response.code, response.msg), 'debug')
+                'ViewVCCachedServer: received response {:d}: {}'.format(
+                    response.code, response.msg), 'debug')
             if response.code != 200:
                 return response
             else:
@@ -648,8 +649,8 @@ def _get_data_server(cache_dir, baseurl):
             # retrieve the URL for the side effect of refreshing the cache
             url = self.baseurl + quote(fname)
             error = 'unknown error'
-            matplotlib.verbose.report('ViewVCCachedServer: retrieving %s'
-                                      % url, 'debug')
+            matplotlib.verbose.report(
+                'ViewVCCachedServer: retrieving {}'.format(url), 'debug')
             try:
                 response = self.opener.open(url)
             except urllib2.URLError, e:
@@ -658,8 +659,8 @@ def _get_data_server(cache_dir, baseurl):
 
             cached = self.cache.get(url)
             if cached is None:
-                msg = 'file %s not in cache; received %s when trying to '\
-                      'retrieve' % (fname, error)
+                msg = 'file {} not in cache; received {} when trying to '\
+                      'retrieve'.format(fname, error)
                 raise KeyError(msg)
 
             fname = cached[0]
@@ -1031,7 +1032,7 @@ def dedent(s):
     # beginning of each line.  If it isn't in the cache, generate it.
     unindent = _dedent_regex.get(nshift, None)
     if unindent is None:
-        unindent = re.compile("\n\r? {0,%d}" % nshift)
+        unindent = re.compile("\n\r? {{0,{:d}}}".format(nshift))
         _dedent_regex[nshift] = unindent
 
     result = unindent.sub("\n", s).strip()
@@ -1281,20 +1282,20 @@ def report_memory(i=0):  # argument may go away
     from subprocess import Popen, PIPE
     pid = os.getpid()
     if sys.platform=='sunos5':
-        a2 = Popen('ps -p %d -o osz' % pid, shell=True,
+        a2 = Popen('ps -p {:d} -o osz'.format(pid), shell=True,
             stdout=PIPE).stdout.readlines()
         mem = int(a2[-1].strip())
     elif sys.platform.startswith('linux'):
-        a2 = Popen('ps -p %d -o rss,sz' % pid, shell=True,
+        a2 = Popen('ps -p {:d} -o rss,sz'.format(pid), shell=True,
             stdout=PIPE).stdout.readlines()
         mem = int(a2[1].split()[1])
     elif sys.platform.startswith('darwin'):
-        a2 = Popen('ps -p %d -o rss,vsz' % pid, shell=True,
+        a2 = Popen('ps -p {:d} -o rss,vsz'.format(pid), shell=True,
             stdout=PIPE).stdout.readlines()
         mem = int(a2[1].split()[0])
     elif sys.platform.startswith('win'):
         try:
-            a2 = Popen(["tasklist", "/nh", "/fi", "pid eq %d" % pid],
+            a2 = Popen(["tasklist", "/nh", "/fi", "pid eq {:d}".format(pid)],
                 stdout=PIPE).stdout.read()
         except OSError:
             raise NotImplementedError(
@@ -1303,16 +1304,16 @@ def report_memory(i=0):  # argument may go away
         mem = int(a2.strip().split()[-2].replace(',',''))
     else:
         raise NotImplementedError(
-                "We don't have a memory monitor for %s" % sys.platform)
+                "We don't have a memory monitor for {}".format(sys.platform))
     return mem
 
-_safezip_msg = 'In safezip, len(args[0])=%d but len(args[%d])=%d'
+_safezip_msg = 'In safezip, len(args[0])={:d} but len(args[{:d}])={:d}'
 def safezip(*args):
     'make sure *args* are equal len before zipping'
     Nx = len(args[0])
     for i, arg in enumerate(args[1:]):
         if len(arg) != Nx:
-            raise ValueError(_safezip_msg % (Nx, i+1, len(arg)))
+            raise ValueError(_safezip_msg.format(Nx, i+1, len(arg)))
     return zip(*args)
 
 def issubclass_safe(x, klass):
@@ -1365,8 +1366,9 @@ class MemoryMonitor:
             if di == 0:
                 continue
             dm = self._mem[ii[i]] - self._mem[ii[i-1]]
-            print('%5d %5d %3d %8.3f' % (ii[i], self._mem[ii[i]],
-                                            dm, dm / float(di)))
+            print('{:5d} {:5d} {:3d} {:8.3f}'.format(
+                ii[i], self._mem[ii[i]],
+                dm, dm / float(di)))
         if self._overflow:
             print("Warning: array size was too small for the number of calls.")
 
@@ -1405,17 +1407,17 @@ def print_cycles(objects, outstream=sys.stdout, show_progress=False):
             # next "wraps around"
             next = path[(i + 1) % len(path)]
 
-            outstream.write("   %s -- " % str(type(step)))
+            outstream.write("   {} -- ".format(str(type(step))))
             if isinstance(step, dict):
                 for key, val in step.iteritems():
                     if val is next:
-                        outstream.write("[%s]" % repr(key))
+                        outstream.write("[{!r}]".format(key))
                         break
                     if key is next:
-                        outstream.write("[key] = %s" % repr(val))
+                        outstream.write("[key] = {!r}".format(val))
                         break
             elif isinstance(step, list):
-                outstream.write("[%d]" % step.index(next))
+                outstream.write("[{:d}]".format(step.index(next)))
             elif isinstance(step, tuple):
                 outstream.write("( tuple )")
             else:
@@ -1425,7 +1427,7 @@ def print_cycles(objects, outstream=sys.stdout, show_progress=False):
 
     def recurse(obj, start, all, current_path):
         if show_progress:
-            outstream.write("%d\r" % len(all))
+            outstream.write("{:d}\r".format(len(all)))
 
         all[id(obj)] = None
 
@@ -1447,7 +1449,7 @@ def print_cycles(objects, outstream=sys.stdout, show_progress=False):
                 recurse(referent, start, all, current_path + [obj])
 
     for obj in objects:
-        outstream.write("Examining: %r\n" % (obj,))
+        outstream.write("Examining: {!r}\n".format(obj))
         recurse(obj, obj, { }, [])
 
 class Grouper(object):

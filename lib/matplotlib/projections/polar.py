@@ -149,14 +149,14 @@ class PolarAxes(Axes):
         def __call__(self, x, pos=None):
             # \u00b0 : degree symbol
             if rcParams['text.usetex'] and not rcParams['text.latex.unicode']:
-                return r"$%0.0f^\circ$" % ((x / np.pi) * 180.0)
+                return r"${:0.0f}^\circ$".format((x / np.pi) * 180.0)
             else:
                 # we use unicode, rather than mathtext with \circ, so
                 # that it will work correctly with any arbitrary font
                 # (assuming it has a degree sign), whereas $5\circ$
                 # will only work correctly with one of the supported
                 # math fonts (Computer Modern and STIX)
-                return u"%0.0f\u00b0" % ((x / np.pi) * 180.0)
+                return u"%{:0.0f}\u00b0".format((x / np.pi) * 180.0)
 
     class RadialLocator(Locator):
         """
@@ -362,6 +362,7 @@ cbook.simple_linear_interpolation on the data before passing to matplotlib.""")
     set_rscale = Axes.set_yscale
     set_rticks = Axes.set_yticks
 
+    # PY3K TODO: Support new-style formatting in fmt kwarg
     @docstring.dedent_interpd
     def set_thetagrids(self, angles, labels=None, frac=None, fmt=None,
                        **kwargs):
@@ -385,7 +386,7 @@ cbook.simple_linear_interpolation on the data before passing to matplotlib.""")
 
         kwargs are optional text properties for the labels:
 
-        %(Text)s
+        {Text}
 
         ACCEPTS: sequence of floats
         """
@@ -425,7 +426,7 @@ cbook.simple_linear_interpolation on the data before passing to matplotlib.""")
 
         kwargs are optional text properties for the labels:
 
-        %(Text)s
+        {Text}
 
         ACCEPTS: sequence of floats
         """
@@ -468,7 +469,7 @@ cbook.simple_linear_interpolation on the data before passing to matplotlib.""")
         # \u03b8: lower-case theta
         # \u03c0: lower-case pi
         # \u00b0: degree symbol
-        return u'\u03b8=%0.3f\u03c0 (%0.3f\u00b0), r=%0.3f' % (theta, theta * 180.0, r)
+        return u'\u03b8={:0.3f}\u03c0 ({:0.3f}\u00b0), r={:0.3f}'.format(theta, theta * 180.0, r)
 
     def get_data_ratio(self):
         '''

@@ -87,7 +87,7 @@ class TriContourSet(ContourSet):
         self.zmax = z.max()
         self.zmin = z.min()
         if self.logscale and self.zmin <= 0:
-            raise ValueError('Cannot %s log of negative values.' % fn)
+            raise ValueError('Cannot {} log of negative values.'.format(fn))
         self._contour_level_args(z, args[1:])
         return (tri, z)
 

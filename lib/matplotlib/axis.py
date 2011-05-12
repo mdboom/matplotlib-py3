@@ -97,30 +97,30 @@ class Tick(artist.Artist):
 
         if size is None:
             if major:
-                size = rcParams['%s.major.size'%name]
+                size = rcParams['{}.major.size'.format(name)]
             else:
-                size = rcParams['%s.minor.size'%name]
+                size = rcParams['{}.minor.size'.format(name)]
         self._size = size
 
         self._width = width # can be None for marker default
 
         if color is None:
-            color = rcParams['%s.color' % name]
+            color = rcParams['{}.color'.format(name)]
         self._color = color
 
         if pad is None:
             if major:
-                pad = rcParams['%s.major.pad'%name]
+                pad = rcParams['{}.major.pad'.format(name)]
             else:
-                pad = rcParams['%s.minor.pad'%name]
+                pad = rcParams['{}.minor.pad'.format(name)]
         self._base_pad = pad
 
         if labelcolor is None:
-            labelcolor = rcParams['%s.color' % name]
+            labelcolor = rcParams['{}.color'.format(name)]
         self._labelcolor = labelcolor
 
         if labelsize is None:
-            labelsize = rcParams['%s.labelsize' % name]
+            labelsize = rcParams['{}.labelsize'.format(name)]
         self._labelsize = labelsize
 
         if zorder is None:
@@ -319,7 +319,7 @@ class XTick(Tick):
 
     def apply_tickdir(self, tickdir):
         if tickdir is None:
-            tickdir = rcParams['%s.direction' % self._name]
+            tickdir = rcParams['{}.direction'.format(self._name)]
         self._tickdir = tickdir
 
         if self._tickdir == 'in':
@@ -458,7 +458,7 @@ class YTick(Tick):
 
     def apply_tickdir(self, tickdir):
         if tickdir is None:
-            tickdir = rcParams['%s.direction' % self._name]
+            tickdir = rcParams['{}.direction'.format(self._name)]
         self._tickdir = tickdir
 
         if self._tickdir == 'in':
@@ -598,7 +598,7 @@ class Axis(artist.Artist):
 
     def __str__(self):
         return self.__class__.__name__ \
-            + "(%f,%f)"%tuple(self.axes.transAxes.transform_point((0,0)))
+            + "({:f},{:f})".format(*self.axes.transAxes.transform_point((0,0)))
 
     def __init__(self, axes, pickradius=15):
         """
@@ -779,7 +779,7 @@ class Axis(artist.Artist):
                     return True
                 if arg.lower() == 'off':
                     return False
-                raise ValueError('String "%s" should be "on" or "off"' % arg)
+                raise ValueError('String "{}" should be "on" or "off"'.format(arg))
             return bool(arg)
         # The following lists may be moved to a more
         # accessible location.
@@ -820,8 +820,8 @@ class Axis(artist.Artist):
             for key in kw:
                 if key not in kwkeys:
                     raise ValueError(
-                        "keyword %s is not recognized; valid keywords are %s"
-                        % (key, kwkeys))
+                        "keyword {} is not recognized; valid keywords are {}".format(
+                            key, kwkeys))
             kwtrans.update(kw)
         else:
             raise NotImplementedError("Inverse translation is deferred")
@@ -1228,7 +1228,6 @@ class Axis(artist.Artist):
         neednew = self.converter!=converter
         self.converter = converter
         default = self.converter.default_units(data, self)
-        #print 'update units: default="%s", units=%s"'%(default, self.units)
         if default is not None and self.units is None:
             self.set_units(default)
 
@@ -1275,11 +1274,9 @@ class Axis(artist.Artist):
             self.converter = munits.registry.get_converter(x)
 
         if self.converter is None:
-            #print 'convert_units returning identity: units=%s, converter=%s'%(self.units, self.converter)
             return x
 
         ret =  self.converter.convert(x, self.units, self)
-        #print 'convert_units converting: axis=%s, units=%s, converter=%s, in=%s, out=%s'%(self, self.units, self.converter, x, ret)
         return ret
 
     def set_units(self, u):
@@ -1629,7 +1626,7 @@ class XAxis(Axis):
             self.set_tick_params(which='both', top=True, labeltop=False,
                                  bottom=True, labelbottom=True)
         else:
-            raise ValueError("invalid position: %s" % position)
+            raise ValueError("invalid position: {}".format(position))
 
     def tick_top(self):
         'use ticks only on top'
@@ -1890,7 +1887,7 @@ class YAxis(Axis):
             self.set_tick_params(which='both', right=True, labelright=False,
                                  left=True, labelleft=True)
         else:
-            raise ValueError("invalid position: %s" % position)
+            raise ValueError("invalid position: {}".format(position))
 
     def tick_right(self):
         'use ticks only on right'

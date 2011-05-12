@@ -164,7 +164,7 @@ class Button(Widget):
         except KeyError: pass
 
 
-
+# PY3K TODO: Support new-style formatting for valfmt kwarg
 class Slider(Widget):
     """
     A slider representing a floating point range
@@ -1029,8 +1029,8 @@ class RectangleSelector:
 
         def onselect(eclick, erelease):
           'eclick and erelease are matplotlib events at press and release'
-          print ' startposition : (%f, %f)' % (eclick.xdata, eclick.ydata)
-          print ' endposition   : (%f, %f)' % (erelease.xdata, erelease.ydata)
+          print ' startposition : ({:f}, {:f})'.format(eclick.xdata, eclick.ydata)
+          print ' endposition   : ({:f}, {:f})'.format(erelease.xdata, erelease.ydata)
           print ' used button   : ', eclick.button
 
         def toggle_selector(event):

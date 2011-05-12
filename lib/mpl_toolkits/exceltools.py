@@ -40,12 +40,12 @@ def xlformat_factory(format):
     xlstyle = excel.XFStyle()
     if isinstance(format, mlab.FormatPercent):
        zeros = ''.join(['0']*format.precision)
-       xlstyle.num_format_str = '0.%s%%;[RED]-0.%s%%'%(zeros, zeros)
+       xlstyle.num_format_str = '0.{0}%;[RED]-0.{0}%'.format(zeros)
        format.scale = 1.
     elif isinstance(format, mlab.FormatFloat):
         if format.precision>0:
             zeros = ''.join(['0']*format.precision)
-            xlstyle.num_format_str = '#,##0.%s;[RED]-#,##0.%s'%(zeros, zeros)
+            xlstyle.num_format_str = '#,##0.{0};[RED]-#,##0.{0}'.format(zeros)
         else:
             xlstyle.num_format_str = '#,##;[RED]-#,##'
     elif isinstance(format, mlab.FormatInt):
@@ -114,7 +114,7 @@ def rec2excel(r, ws, formatd=None, rownum=0, colnum=0, nanstr='NaN', infstr='Inf
             elif mlab.safe_isinf(val):
                 sgn = np.sign(val)
                 if sgn<0: s = infstr
-                else: s = '-%s'%infstr
+                else: s = '-{}'.format(infstr)
                 ws.write(rownum, colnum+i, s)
             elif format.xlstyle is None:
                 ws.write(rownum, colnum+i, val)
