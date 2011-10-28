@@ -506,7 +506,7 @@ class Line2D(Artist):
                 drawFunc = getattr(self, funcname)
                 drawFunc(renderer, gc, tpath, affine.frozen())
 
-        if self._marker is not None:
+        if self._marker:
             gc = renderer.new_gc()
             self._set_gc_clip(gc)
             gc.set_foreground(self.get_markeredgecolor())
@@ -747,7 +747,7 @@ class Line2D(Artist):
         %(MarkerAccepts)s
         """
         self._marker.set_marker(marker)
-        
+
     def set_markeredgecolor(self, ec):
         """
         Set the marker edge color
