@@ -895,9 +895,9 @@ class ContourSet(cm.ScalarMappable, ContourLabeler):
                 except:
                     raise TypeError(
                         "Last %s arg must give levels; see help(%s)" % (fn,fn))
-            if self.filled and len(lev) < 2:
-                raise ValueError("Filled contours require at least 2 levels.")
             self.levels = lev
+        if self.filled and len(self.levels) < 2:
+            raise ValueError("Filled contours require at least 2 levels.")
 
     def _process_levels(self):
         self._levels = list(self.levels)
@@ -1296,10 +1296,9 @@ class QuadContourSet(ContourSet):
         Use keyword args to control colors, linewidth, origin, cmap ... see
         below for more details.
 
-        *X*, *Y*, and *Z* must be arrays with the same dimensions.
-
-        *Z* may be a masked array, but filled contouring may not
-        handle internal masked regions correctly.
+        *X* and *Y* must both be 2-D with the same shape as *Z*, or they
+        must both be 1-D such that ``len(X)`` is the number of columns in
+        *Z* and ``len(Y)`` is the number of rows in *Z*.
 
         ``C = contour(...)`` returns a
         :class:`~matplotlib.contour.QuadContourSet` object.

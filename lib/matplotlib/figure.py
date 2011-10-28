@@ -207,13 +207,12 @@ class Figure(Artist):
     the callback will be called with ``func(fig)`` where fig is the
     :class:`Figure` instance.
 
-    The figure patch is drawn by a the attribute
-
     *patch*
-       a :class:`matplotlib.patches.Rectangle` instance
+       The figure patch is drawn by a
+       :class:`matplotlib.patches.Rectangle` instance
 
     *suppressComposite*
-       for multiple figure images, the figure will make composite
+       For multiple figure images, the figure will make composite
        images depending on the renderer option_image_nocomposite
        function.  If suppressComposite is True|False, this will
        override the renderer
@@ -227,7 +226,7 @@ class Figure(Artist):
                  dpi       = None,  # defaults to rc figure.dpi
                  facecolor = None,  # defaults to rc figure.facecolor
                  edgecolor = None,  # defaults to rc figure.edgecolor
-                 linewidth = 1.0,   # the default linewidth of the frame
+                 linewidth = 0.0,   # the default linewidth of the frame
                  frameon = True,    # whether or not to draw the figure frame
                  subplotpars = None, # default to rc
                  ):
@@ -243,13 +242,13 @@ class Figure(Artist):
         *linewidth*
             the figure patch edge linewidth; the default linewidth of the frame
         *frameon*
-            if False, suppress drawing the figure frame
+            if ``False``, suppress drawing the figure frame
         *subplotpars*
             a :class:`SubplotParams` instance, defaults to rc
         """
         Artist.__init__(self)
 
-        self.callbacks = cbook.CallbackRegistry(('dpi_changed', ))
+        self.callbacks = cbook.CallbackRegistry()
 
         if figsize is None  : figsize   = rcParams['figure.figsize']
         if dpi is None      : dpi       = rcParams['figure.dpi']
@@ -272,6 +271,7 @@ class Figure(Artist):
             linewidth=linewidth,
             )
         self._set_artist_props(self.patch)
+        self.patch.set_aa(False)
 
         self._hold = rcParams['axes.hold']
         self.canvas = None
@@ -634,27 +634,28 @@ class Figure(Artist):
     @docstring.dedent_interpd
     def add_axes(self, *args, **kwargs):
         """
-        Add an a axes with axes rect [*left*, *bottom*, *width*,
+        Add an axes at position *rect* [*left*, *bottom*, *width*,
         *height*] where all quantities are in fractions of figure
         width and height.  kwargs are legal
         :class:`~matplotlib.axes.Axes` kwargs plus *projection* which
         sets the projection type of the axes.  (For backward
         compatibility, ``polar=True`` may also be provided, which is
         equivalent to ``projection='polar'``).  Valid values for
-        *projection* are: %(projection_names)s.  Some of these projections support
-        additional kwargs, which may be provided to :meth:`add_axes`::
+        *projection* are: %(projection_names)s.  Some of these
+        projections support  additional kwargs, which may be provided
+        to :meth:`add_axes`. Typical usage::
 
             rect = l,b,w,h
             fig.add_axes(rect)
             fig.add_axes(rect, frameon=False, axisbg='g')
             fig.add_axes(rect, polar=True)
             fig.add_axes(rect, projection='polar')
-            fig.add_axes(ax)   # add an Axes instance
+            fig.add_axes(ax)
 
         If the figure already has an axes with the same parameters,
         then it will simply make that axes current and return it.  If
-        you do not want this behavior, eg. you want to force the
-        creation of a new axes, you must use a unique set of args and
+        you do not want this behavior, e.g. you want to force the
+        creation of a new Axes, you must use a unique set of args and
         kwargs.  The axes :attr:`~matplotlib.axes.Axes.label`
         attribute has been exposed for this purpose.  Eg., if you want
         two axes that are otherwise identical to be added to the
@@ -663,9 +664,18 @@ class Figure(Artist):
             fig.add_axes(rect, label='axes1')
             fig.add_axes(rect, label='axes2')
 
-        The :class:`~matplotlib.axes.Axes` instance will be returned.
+        In rare circumstances, add_axes may be called with a single
+        argument, an Axes instance already created in the present
+        figure but not in the figure's list of axes.  For example,
+        if an axes has been removed with :meth:`delaxes`, it can
+        be restored with::
 
-        The following kwargs are supported:
+            fig.add_axes(ax)
+
+        In all cases, the :class:`~matplotlib.axes.Axes` instance
+        will be returned.
+
+        In addition to *projection*, the following kwargs are supported:
 
         %(Axes)s
         """
@@ -778,7 +788,7 @@ class Figure(Artist):
         a gui widget is tracking the axes in the figure.
         """
         self.suppressComposite = None
-        self.callbacks = cbook.CallbackRegistry(('dpi_changed', ))
+        self.callbacks = cbook.CallbackRegistry()
 
         for ax in tuple(self.axes):  # Iterate over the copy.
             ax.cla()
@@ -1177,8 +1187,12 @@ class Figure(Artist):
         """
         if ax is None:
             ax = self.gca()
+        use_gridspec = kw.pop("use_gridspec", False)
         if cax is None:
-            cax, kw = cbar.make_axes(ax, **kw)
+            if use_gridspec and isinstance(ax, SubplotBase):
+                cax, kw = cbar.make_axes_gridspec(ax, **kw)
+            else:
+                cax, kw = cbar.make_axes(ax, **kw)
         cax.hold(True)
         cb = cbar.Colorbar(cax, mappable, **kw)
 
@@ -1294,6 +1308,89 @@ class Figure(Artist):
                                       Affine2D().scale(1./self.dpi))
 
         return bbox_inches
+
+
+    def tight_layout(self, renderer=None, pad=1.2, h_pad=None, w_pad=None):
+        """Adjust subplot parameters to give specified padding.
+
+        Parameters
+        ----------
+        pad : float
+            padding between the figure edge and the edges of subplots, as a fraction of the font-size.
+        h_pad, w_pad : float
+            padding (height/width) between edges of adjacent subplots.
+            Defaults to `pad_inches`.
+        """
+
+        from tight_layout import auto_adjust_subplotpars, get_renderer
+
+        if renderer is None:
+            renderer = get_renderer(self)
+
+        subplotspec_list = []
+        subplot_list = []
+        nrows_list = []
+        ncols_list = []
+        ax_bbox_list = []
+
+        subplot_dict = {} # for axes_grid1, multiple axes can share
+                          # same subplot_interface. Thus we need to
+                          # join them together.
+
+        for ax in self.axes:
+            locator = ax.get_axes_locator()
+            if hasattr(locator, "get_subplotspec"):
+                subplotspec = locator.get_subplotspec().get_topmost_subplotspec()
+            elif hasattr(ax, "get_subplotspec"):
+                subplotspec = ax.get_subplotspec().get_topmost_subplotspec()
+            else:
+                continue
+
+            if (subplotspec is None) or \
+                   subplotspec.get_gridspec().locally_modified_subplot_params():
+                continue
+
+            subplots = subplot_dict.setdefault(subplotspec, [])
+
+            if not subplots:
+                myrows, mycols, _, _ = subplotspec.get_geometry()
+                nrows_list.append(myrows)
+                ncols_list.append(mycols)
+                subplotspec_list.append(subplotspec)
+                subplot_list.append(subplots)
+                ax_bbox_list.append(subplotspec.get_position(self))
+
+            subplots.append(ax)
+
+        max_nrows = max(nrows_list)
+        max_ncols = max(ncols_list)
+
+        num1num2_list = []
+        for subplotspec in subplotspec_list:
+            rows, cols, num1, num2 = subplotspec.get_geometry()
+            div_row, mod_row = divmod(max_nrows, rows)
+            div_col, mod_col = divmod(max_ncols, cols)
+            if (mod_row != 0) or (mod_col != 0):
+                raise RuntimeError("")
+
+            rowNum1, colNum1 =  divmod(num1, cols)
+            if num2 is None:
+                rowNum2, colNum2 =  rowNum1, colNum1
+            else:
+                rowNum2, colNum2 =  divmod(num2, cols)
+
+            num1num2_list.append((rowNum1*div_row*max_ncols + colNum1*div_col,
+                                  ((rowNum2+1)*div_row-1)*max_ncols + (colNum2+1)*div_col-1))
+
+
+        kwargs = auto_adjust_subplotpars(self, renderer,
+                                         nrows_ncols=(max_nrows, max_ncols),
+                                         num1num2_list=num1num2_list,
+                                         subplot_list=subplot_list,
+                                         ax_bbox_list=ax_bbox_list,
+                                         pad=pad, h_pad=h_pad, w_pad=w_pad)
+
+        self.subplots_adjust(**kwargs)
 
 
 

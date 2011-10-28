@@ -9,6 +9,7 @@
 
 #include "CXX/Extensions.hxx"
 
+#include "agg_conv_contour.h"
 #include "agg_conv_curve.h"
 #include "agg_conv_stroke.h"
 #include "agg_conv_transform.h"
@@ -56,6 +57,8 @@ public:
                            "convert_path_to_polygons(path, trans, width, height)");
         add_varargs_method("cleanup_path", &_path_module::cleanup_path,
                            "cleanup_path(path, trans, remove_nans, clip, snap, simplify, curves)");
+        add_varargs_method("convert_to_svg", &_path_module::convert_to_svg,
+                           "convert_to_svg(path, trans, clip, simplify, precision)");
         initialize("Helper functions for paths");
     }
 
@@ -75,6 +78,7 @@ private:
     Py::Object path_intersects_path(const Py::Tuple& args);
     Py::Object convert_path_to_polygons(const Py::Tuple& args);
     Py::Object cleanup_path(const Py::Tuple& args);
+    Py::Object convert_to_svg(const Py::Tuple& args);
 };
 
 //
@@ -222,12 +226,13 @@ point_in_path_impl(const double tx, const double ty, T& path)
 }
 
 inline bool
-point_in_path(double x, double y, PathIterator& path,
+point_in_path(double x, double y, double r, PathIterator& path,
               const agg::trans_affine& trans)
 {
     typedef agg::conv_transform<PathIterator> transformed_path_t;
     typedef PathNanRemover<transformed_path_t> no_nans_t;
     typedef agg::conv_curve<no_nans_t> curve_t;
+    typedef agg::conv_contour<curve_t> contour_t;
 
     if (path.total_vertices() < 3)
     {
@@ -237,7 +242,9 @@ point_in_path(double x, double y, PathIterator& path,
     transformed_path_t trans_path(path, trans);
     no_nans_t no_nans_path(trans_path, true, path.has_curves());
     curve_t curved_path(no_nans_path);
-    return point_in_path_impl(x, y, curved_path);
+    contour_t contoured_path(curved_path);
+    contoured_path.width(fabs(r));
+    return point_in_path_impl(x, y, contoured_path);
 }
 
 inline bool
@@ -260,14 +267,15 @@ point_on_path(double x, double y, double r, PathIterator& path,
 Py::Object
 _path_module::point_in_path(const Py::Tuple& args)
 {
-    args.verify_length(4);
+    args.verify_length(5);
 
     double x = Py::Float(args[0]);
     double y = Py::Float(args[1]);
-    PathIterator path(args[2]);
-    agg::trans_affine trans = py_to_agg_transformation_matrix(args[3].ptr(), false);
+    double r = Py::Float(args[2]);
+    PathIterator path(args[3]);
+    agg::trans_affine trans = py_to_agg_transformation_matrix(args[4].ptr(), false);
 
-    if (::point_in_path(x, y, path, trans))
+    if (::point_in_path(x, y, r, path, trans))
     {
         return Py::Int(1);
     }
@@ -661,7 +669,7 @@ _path_module::point_in_path_collection(const Py::Tuple& args)
 
         if (filled)
         {
-            if (::point_in_path(x, y, path, trans))
+            if (::point_in_path(x, y, radius, path, trans))
                 result.append(Py::Int((int)i));
         }
         else
@@ -693,7 +701,7 @@ path_in_path(PathIterator& a, const agg::trans_affine& atrans,
     b_curved.rewind(0);
     while (b_curved.vertex(&x, &y) != agg::path_cmd_stop)
     {
-        if (!::point_in_path(x, y, a, atrans))
+        if (!::point_in_path(x, y, 0.0, a, atrans))
             return false;
     }
 
@@ -1479,6 +1487,123 @@ _path_module::cleanup_path(const Py::Tuple& args)
     }
 
     return result;
+}
+
+Py::Object
+_path_module::convert_to_svg(const Py::Tuple& args)
+{
+    args.verify_length(5);
+
+    PathIterator path(args[0]);
+    agg::trans_affine trans = py_to_agg_transformation_matrix(args[1].ptr(), false);
+
+    Py::Object clip_obj = args[2];
+    bool do_clip;
+    agg::rect_base<double> clip_rect(0, 0, 0, 0);
+    if (clip_obj.isNone() || !clip_obj.isTrue())
+    {
+        do_clip = false;
+    }
+    else
+    {
+        double x1, y1, x2, y2;
+        Py::Tuple clip_tuple(clip_obj);
+        x1 = Py::Float(clip_tuple[0]);
+        y1 = Py::Float(clip_tuple[1]);
+        x2 = Py::Float(clip_tuple[2]);
+        y2 = Py::Float(clip_tuple[3]);
+        clip_rect.init(x1, y1, x2, y2);
+        do_clip = true;
+    }
+
+    bool simplify;
+    Py::Object simplify_obj = args[3];
+    if (simplify_obj.isNone())
+    {
+        simplify = path.should_simplify();
+    }
+    else
+    {
+        simplify = simplify_obj.isTrue();
+    }
+
+    int precision = Py::Int(args[4]);
+
+    #if PY_VERSION_HEX < 0x02070000
+    char format[64];
+    snprintf(format, 64, "%s.%dg", "%", precision);
+    #endif
+
+    typedef agg::conv_transform<PathIterator>  transformed_path_t;
+    typedef PathNanRemover<transformed_path_t> nan_removal_t;
+    typedef PathClipper<nan_removal_t>         clipped_t;
+    typedef PathSimplifier<clipped_t>          simplify_t;
+
+    transformed_path_t tpath(path, trans);
+    nan_removal_t      nan_removed(tpath, true, path.has_curves());
+    clipped_t          clipped(nan_removed, do_clip, clip_rect);
+    simplify_t         simplified(clipped, simplify, path.simplify_threshold());
+
+    size_t buffersize = path.total_vertices() * (precision + 5) * 4;
+    char* buffer = (char *)malloc(buffersize);
+    char* p = buffer;
+
+    const char codes[] = {'M', 'L', 'Q', 'C'};
+    const int  waits[] = {  1,   1,   2,   3};
+
+    int wait = 0;
+    unsigned code;
+    double x = 0, y = 0;
+    while ((code = simplified.vertex(&x, &y)) != agg::path_cmd_stop)
+    {
+        if (wait == 0)
+        {
+            *p++ = '\n';
+
+            if (code == 0x4f)
+            {
+                *p++ = 'z';
+                *p++ = '\n';
+                continue;
+            }
+
+            *p++ = codes[code-1];
+            wait = waits[code-1];
+        }
+        else
+        {
+            *p++ = ' ';
+        }
+
+        #if PY_VERSION_HEX >= 0x02070000
+        char* str;
+        str = PyOS_double_to_string(x, 'g', precision, 0, NULL);
+        p += snprintf(p, buffersize - (p - buffer), str);
+        PyMem_Free(str);
+        *p++ = ' ';
+        str = PyOS_double_to_string(y, 'g', precision, 0, NULL);
+        p += snprintf(p, buffersize - (p - buffer), str);
+        PyMem_Free(str);
+        #else
+        char str[64];
+        PyOS_ascii_formatd(str, 64, format, x);
+        p += snprintf(p, buffersize - (p - buffer), str);
+        *p++ = ' ';
+        PyOS_ascii_formatd(str, 64, format, y);
+        p += snprintf(p, buffersize - (p - buffer), str);
+        #endif
+
+        --wait;
+    }
+
+    #if PY3K
+    PyObject* result = PyUnicode_FromStringAndSize(buffer, p - buffer);
+    #else
+    PyObject* result = PyString_FromStringAndSize(buffer, p - buffer);
+    #endif
+    free(buffer);
+
+    return Py::Object(result, true);
 }
 
 PyMODINIT_FUNC

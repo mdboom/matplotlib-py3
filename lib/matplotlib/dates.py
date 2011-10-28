@@ -302,9 +302,15 @@ def drange(dstart, dend, delta):
             delta.microseconds/MUSECONDS_PER_DAY)
     f1 = _to_ordinalf(dstart)
     f2 = _to_ordinalf(dend)
-    return np.arange(f1, f2, step)
-
-
+    
+    num = int(np.ceil((f2-f1)/step))        #calculate the difference between dend and dstart in times of delta
+    dinterval_end = dstart + num*delta      #calculate end of the interval which will be generated
+    if dinterval_end >= dend:               #ensure, that an half open interval will be generated [dstart, dend)
+        dinterval_end -= delta              #if the endpoint is greated than dend, just subtract one delta
+        num -= 1
+        
+    f2 = _to_ordinalf(dinterval_end) #new float-endpoint
+    return np.linspace(f1, f2, num+1)
 
 ### date tickers and formatters ###
 
@@ -1107,15 +1113,26 @@ def weeks(w):
 
 
 class DateConverter(units.ConversionInterface):
-    """The units are equivalent to the timezone."""
+    """
+    Converter for datetime.date and datetime.datetime data,
+    or for date/time data represented as it would be converted
+    by :func:`date2num`.
+
+    The 'unit' tag for such data is None or a tzinfo instance.
+    """
 
     @staticmethod
     def axisinfo(unit, axis):
-        'return the unit AxisInfo'
-        # make sure that the axis does not start at 0
+        """
+        Return the :class:`~matplotlib.units.AxisInfo` for *unit*.
 
-        majloc = AutoDateLocator(tz=unit)
-        majfmt = AutoDateFormatter(majloc, tz=unit)
+        *unit* is a tzinfo instance or None.
+        The *axis* argument is required but not used.
+        """
+        tz = unit
+
+        majloc = AutoDateLocator(tz=tz)
+        majfmt = AutoDateFormatter(majloc, tz=tz)
         datemin = datetime.date(2000, 1, 1)
         datemax = datetime.date(2010, 1, 1)
 
@@ -1124,12 +1141,28 @@ class DateConverter(units.ConversionInterface):
 
     @staticmethod
     def convert(value, unit, axis):
-        if units.ConversionInterface.is_numlike(value): return value
+        """
+        If *value* is not already a number or sequence of numbers,
+        convert it with :func:`date2num`.
+
+        The *unit* and *axis* arguments are not used.
+        """
+        if units.ConversionInterface.is_numlike(value):
+            return value
         return date2num(value)
 
     @staticmethod
     def default_units(x, axis):
-        'Return the default unit for *x* or None'
+        'Return the tzinfo instance of *x* or of its first element, or None'
+        try:
+            x = x[0]
+        except (TypeError, IndexError):
+            pass
+
+        try:
+            return x.tzinfo
+        except AttributeError:
+            pass
         return None
 
 

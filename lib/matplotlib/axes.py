@@ -22,6 +22,7 @@ import matplotlib.font_manager as font_manager
 import matplotlib.image as mimage
 import matplotlib.legend as mlegend
 import matplotlib.lines as mlines
+import matplotlib.markers as mmarkers
 import matplotlib.mlab as mlab
 import matplotlib.path as mpath
 import matplotlib.patches as mpatches
@@ -34,7 +35,7 @@ import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
 import matplotlib.tri as mtri
 
-from matplotlib.container import BarContainer, ErrorbarContainer
+from matplotlib.container import BarContainer, ErrorbarContainer, StemContainer
 
 iterable = cbook.iterable
 is_string_like = cbook.is_string_like
@@ -197,7 +198,7 @@ class _process_plot_var_args:
         for key, val in kwargs.items():
             funcName = "set_%s"%key
             if not hasattr(line,funcName):
-                raise TypeError, 'There is no line property "%s"'%key
+                raise TypeError('There is no line property "%s"'%key)
             func = getattr(line,funcName)
             func(val)
 
@@ -206,7 +207,7 @@ class _process_plot_var_args:
         for key, val in kwargs.items():
             funcName = "set_%s"%key
             if not hasattr(fill_poly,funcName):
-                raise TypeError, 'There is no patch property "%s"'%key
+                raise TypeError('There is no patch property "%s"'%key)
             func = getattr(fill_poly,funcName)
             func(val)
 
@@ -826,8 +827,7 @@ class Axes(martist.Artist):
             spine.cla()
 
         self.ignore_existing_data_limits = True
-        self.callbacks = cbook.CallbackRegistry(('xlim_changed',
-                                                 'ylim_changed'))
+        self.callbacks = cbook.CallbackRegistry()
 
         if self._sharex is not None:
             # major and minor are class instances with
@@ -1239,11 +1239,17 @@ class Axes(martist.Artist):
     def axis(self, *v, **kwargs):
         '''
         Convenience method for manipulating the x and y view limits
-        and the aspect ratio of the plot.
+        and the aspect ratio of the plot. For details, see
+        :func:`~matplotlib.pyplot.axis`.
 
         *kwargs* are passed on to :meth:`set_xlim` and
         :meth:`set_ylim`
         '''
+        if len(v) == 0 and len(kwargs) == 0:
+            xmin, xmax = self.get_xlim()
+            ymin, ymax = self.get_ylim()
+            return xmin, xmax, ymin, ymax
+
         if len(v)==1 and is_string_like(v[0]):
             s = v[0].lower()
             if s=='on': self.set_axis_on()
@@ -1273,25 +1279,31 @@ class Axes(martist.Artist):
             ymin, ymax = self.get_ylim()
             return xmin, xmax, ymin, ymax
 
-        try: v[0]
+        emit = kwargs.get('emit', True)
+        try:
+            v[0]
         except IndexError:
-            emit = kwargs.get('emit', True)
             xmin = kwargs.get('xmin', None)
             xmax = kwargs.get('xmax', None)
+            auto = False # turn off autoscaling, unless...
+            if xmin is None and xmax is None:
+                auto = None # leave autoscaling state alone
+            xmin, xmax = self.set_xlim(xmin, xmax, emit=emit, auto=auto)
 
-            xmin, xmax = self.set_xlim(xmin, xmax, emit)
             ymin = kwargs.get('ymin', None)
             ymax = kwargs.get('ymax', None)
-            ymin, ymax = self.set_ylim(ymin, ymax, emit)
+            auto = False # turn off autoscaling, unless...
+            if ymin is None and ymax is None:
+                auto = None # leave autoscaling state alone
+            ymin, ymax = self.set_ylim(ymin, ymax, emit=emit, auto=auto)
             return xmin, xmax, ymin, ymax
 
         v = v[0]
         if len(v) != 4:
             raise ValueError('v must contain [xmin xmax ymin ymax]')
 
-
-        self.set_xlim([v[0], v[1]])
-        self.set_ylim([v[2], v[3]])
+        self.set_xlim([v[0], v[1]], emit=emit, auto=False)
+        self.set_ylim([v[2], v[3]], emit=emit, auto=False)
 
         return v
 
@@ -2096,6 +2108,13 @@ class Axes(martist.Artist):
                          numeric offset is specified, it will be
                          used.
           *axis*         [ 'x' | 'y' | 'both' ]
+          *useLocale*    If True, format the number according to
+                         the current locale.  This affects things
+                         such as the character used for the
+                         decimal separator.  If False, use
+                         C-style (English) formatting.  The
+                         default setting is controlled by the
+                         axes.formatter.use_locale rcparam.
           ============   =========================================
 
         Only the major ticks are affected.
@@ -2108,6 +2127,7 @@ class Axes(martist.Artist):
         style = kwargs.pop('style', '').lower()
         scilimits = kwargs.pop('scilimits', None)
         useOffset = kwargs.pop('useOffset', None)
+        use_locale = kwargs.pop('useLocale', None)
         axis = kwargs.pop('axis', 'both').lower()
         if scilimits is not None:
             try:
@@ -2144,6 +2164,11 @@ class Axes(martist.Artist):
                     self.xaxis.major.formatter.set_useOffset(useOffset)
                 if axis == 'both' or axis == 'y':
                     self.yaxis.major.formatter.set_useOffset(useOffset)
+            if useLocale is not None:
+                if axis == 'both' or axis == 'x':
+                    self.xaxis.major.formatter.set_useLocale(useLocale)
+                if axis == 'both' or axis == 'y':
+                    self.yaxis.major.formatter.set_useLocale(useLocale)
         except AttributeError:
             raise AttributeError(
                 "This method only works with the ScalarFormatter.")
@@ -2711,18 +2736,20 @@ class Axes(martist.Artist):
     def xaxis_date(self, tz=None):
         """Sets up x-axis ticks and labels that treat the x data as dates.
 
-        *tz* is the time zone to use in labeling dates.  Defaults to rc value.
+        *tz* is a timezone string or :class:`tzinfo` instance.
+        Defaults to rc value.
         """
         # should be enough to inform the unit conversion interface
-        # dates are comng in
-        self.xaxis.axis_date()
+        # dates are coming in
+        self.xaxis.axis_date(tz)
 
     def yaxis_date(self, tz=None):
         """Sets up y-axis ticks and labels that treat the y data as dates.
 
-        *tz* is the time zone to use in labeling dates.  Defaults to rc value.
+        *tz* is a timezone string or :class:`tzinfo` instance.
+        Defaults to rc value.
         """
-        self.yaxis.axis_date()
+        self.yaxis.axis_date(tz)
 
     def format_xdata(self, x):
         """
@@ -2764,7 +2791,13 @@ class Axes(martist.Artist):
 
     def can_zoom(self):
         """
-        Return *True* if this axes support the zoom box
+        Return *True* if this axes supports the zoom box button functionality.
+        """
+        return True
+
+    def can_pan(self) :
+        """
+        Return *True* if this axes supports any pan/zoom button functionality.
         """
         return True
 
@@ -2988,7 +3021,7 @@ class Axes(martist.Artist):
         required.
 
         """
-        return self.patch.contains_point(point)
+        return self.patch.contains_point(point, radius=1.0)
 
     def pick(self, *args):
         """
@@ -3840,7 +3873,7 @@ class Axes(martist.Artist):
         *fmt*: string
            The plot format string.
 
-        *tz*: [ None | timezone string ]
+        *tz*: [ None | timezone string | :class:`tzinfo` instance]
            The time zone to use in labeling dates. If *None*, defaults to rc
            value.
 
@@ -4349,7 +4382,8 @@ class Axes(martist.Artist):
             settings.
 
           *frameon*: [ True | False ]
-            if True, draw a frame.  Default is True
+            if True, draw a frame around the legend.
+            The default is set by the rcParam 'legend.frameon'
 
           *fancybox*: [ None | False | True ]
             if True, draw a frame with a round fancybox.  If None, use rc
@@ -4867,7 +4901,8 @@ class Axes(martist.Artist):
 
         return col
 
-    def stem(self, x, y, linefmt='b-', markerfmt='bo', basefmt='r-'):
+    def stem(self, x, y, linefmt='b-', markerfmt='bo', basefmt='r-',
+             bottom=None, label=None):
         """
         call signature::
 
@@ -4896,18 +4931,27 @@ class Axes(martist.Artist):
         if not self._hold: self.cla()
         self.hold(True)
 
-        markerline, = self.plot(x, y, markerfmt)
+        markerline, = self.plot(x, y, markerfmt, label="_nolegend_")
+
+        if bottom is None:
+            bottom = 0
 
         stemlines = []
         for thisx, thisy in zip(x, y):
-            l, = self.plot([thisx,thisx], [0, thisy], linefmt)
+            l, = self.plot([thisx,thisx], [bottom, thisy], linefmt,
+                           label="_nolegend_")
             stemlines.append(l)
 
-        baseline, = self.plot([np.amin(x), np.amax(x)], [0,0], basefmt)
+        baseline, = self.plot([np.amin(x), np.amax(x)], [bottom,bottom],
+                              basefmt, label="_nolegend_")
 
         self.hold(remember_hold)
 
-        return markerline, stemlines, baseline
+        stem_container = StemContainer((markerline, stemlines, baseline),
+                                       label=label)
+        self.add_container(stem_container)
+
+        return stem_container
 
 
     def pie(self, x, explode=None, labels=None, colors=None,
@@ -5627,48 +5671,7 @@ class Axes(martist.Artist):
           *marker*:
             can be one of:
 
-            =======   ==============
-            Value     Description
-            =======   ==============
-            ``'s'``   square
-            ``'o'``   circle
-            ``'^'``   triangle up
-            ``'>'``   triangle right
-            ``'v'``   triangle down
-            ``'<'``   triangle left
-            ``'d'``   diamond
-            ``'p'``   pentagon
-            ``'h'``   hexagon
-            ``'8'``   octagon
-            ``'+'``   plus
-            ``'x'``   cross
-            =======   ==============
-
-            The marker can also be a tuple (*numsides*, *style*,
-            *angle*), which will create a custom, regular symbol.
-
-              *numsides*:
-                the number of sides
-
-              *style*:
-                the style of the regular symbol:
-
-                =====   =============================================
-                Value   Description
-                =====   =============================================
-                0       a regular polygon
-                1       a star-like symbol
-                2       an asterisk
-                3       a circle (*numsides* and *angle* is ignored)
-                =====   =============================================
-
-              *angle*:
-                the angle of rotation of the symbol
-
-            Finally, *marker* can be (*verts*, 0): *verts* is a
-            sequence of (*x*, *y*) vertices for a custom scatter
-            symbol.  Alternatively, use the kwarg combination
-            *marker* = *None*, *verts* = *verts*.
+            %(MarkerTable)s
 
         Any or all of *x*, *y*, *s*, and *c* may be masked arrays, in
         which case all masks will be combined and only unmasked points
@@ -5725,21 +5728,6 @@ class Axes(martist.Artist):
 
         if not self._hold: self.cla()
 
-        syms =  { # a dict from symbol to (numsides, angle)
-            's' : (4,math.pi/4.0,0),   # square
-            'o' : (0,0,3),            # circle
-            '^' : (3,0,0),             # triangle up
-            '>' : (3,math.pi/2.0,0),   # triangle right
-            'v' : (3,math.pi,0),       # triangle down
-            '<' : (3,3*math.pi/2.0,0), # triangle left
-            'd' : (4,0,0),             # diamond
-            'p' : (5,0,0),             # pentagon
-            'h' : (6,0,0),             # hexagon
-            '8' : (8,0,0),             # octagon
-            '+' : (4,0,2),             # plus
-            'x' : (4,math.pi/4.0,2)    # cross
-            }
-
         self._process_unit_info(xdata=x, ydata=y, kwargs=kwargs)
         x = self.convert_xunits(x)
         y = self.convert_yunits(y)
@@ -5790,87 +5778,21 @@ class Axes(martist.Artist):
             marker = (verts, 0)
             verts = None
 
-        if is_string_like(marker):
-            # the standard way to define symbols using a string character
-            sym = syms.get(marker)
-            if sym is None and verts is None:
-                raise ValueError('Unknown marker symbol to scatter')
-            numsides, rotation, symstyle = syms[marker]
+        marker_obj = mmarkers.MarkerStyle(marker)
+        path = marker_obj.get_path().transformed(
+            marker_obj.get_transform())
+        if not marker_obj.is_filled():
+            edgecolors = 'face'
 
-        elif iterable(marker):
-            # accept marker to be:
-            #    (numsides, style, [angle])
-            # or
-            #    (verts[], style, [angle])
-
-            if len(marker)<2 or len(marker)>3:
-                raise ValueError('Cannot create markersymbol from marker')
-
-            if cbook.is_numlike(marker[0]):
-                # (numsides, style, [angle])
-
-                if len(marker)==2:
-                    numsides, rotation = marker[0], 0.
-                elif len(marker)==3:
-                    numsides, rotation = marker[0], marker[2]
-                sym = True
-
-                if marker[1] in (1,2,3):
-                    symstyle = marker[1]
-
-            else:
-                verts = np.asarray(marker[0])
-
-        if sym is not None:
-            if symstyle==0:
-                collection = mcoll.RegularPolyCollection(
-                    numsides, rotation, scales,
-                    facecolors = colors,
-                    edgecolors = edgecolors,
-                    linewidths = linewidths,
-                    offsets = zip(x,y),
-                    transOffset = self.transData,
-                    )
-            elif symstyle==1:
-                collection = mcoll.StarPolygonCollection(
-                    numsides, rotation, scales,
-                    facecolors = colors,
-                    edgecolors = edgecolors,
-                    linewidths = linewidths,
-                    offsets = zip(x,y),
-                    transOffset = self.transData,
-                    )
-            elif symstyle==2:
-                collection = mcoll.AsteriskPolygonCollection(
-                    numsides, rotation, scales,
-                    facecolors = colors,
-                    edgecolors = 'face',
-                    linewidths = linewidths,
-                    offsets = zip(x,y),
-                    transOffset = self.transData,
-                    )
-            elif symstyle==3:
-                collection = mcoll.CircleCollection(
-                    scales,
-                    facecolors = colors,
-                    edgecolors = edgecolors,
-                    linewidths = linewidths,
-                    offsets = zip(x,y),
-                    transOffset = self.transData,
-                    )
-        else:
-            rescale = np.sqrt(max(verts[:,0]**2+verts[:,1]**2))
-            verts /= rescale
-
-            collection = mcoll.PolyCollection(
-                (verts,), scales,
+        collection = mcoll.PathCollection(
+                (path,), scales,
                 facecolors = colors,
                 edgecolors = edgecolors,
                 linewidths = linewidths,
                 offsets = zip(x,y),
                 transOffset = self.transData,
                 )
-            collection.set_transform(mtransforms.IdentityTransform())
+        collection.set_transform(mtransforms.IdentityTransform())
         collection.set_alpha(alpha)
         collection.update(kwargs)
 
@@ -5885,10 +5807,10 @@ class Axes(martist.Artist):
             else:
                 collection.autoscale_None()
 
-        # the pad is a little hack to deal with the fact that we don't
+        # The margin adjustment is a hack to deal with the fact that we don't
         # want to transform all the symbols whose scales are in points
         # to data coords to get the exact bounding box for efficiency
-        # reasons.  It can be done right if this is deemed important
+        # reasons.  It can be done right if this is deemed important.
         # Also, only bother with this padding if there is anything to draw.
         if self._xmargin < 0.05 and x.size > 0 :
             self.set_xmargin(0.05)
@@ -5896,10 +5818,9 @@ class Axes(martist.Artist):
         if self._ymargin < 0.05 and x.size > 0 :
             self.set_ymargin(0.05)
 
+        self.add_collection(collection)
         self.autoscale_view()
 
-        # add the collection last
-        self.add_collection(collection)
         return collection
 
     @docstring.dedent_interpd
@@ -6351,6 +6272,7 @@ class Axes(martist.Artist):
         *y* + *dy*).
 
         Optional kwargs control the arrow properties:
+
         %(FancyArrow)s
 
         **Example:**
@@ -8309,19 +8231,16 @@ class Axes(martist.Artist):
             *Z*   anything that can be interpreted as a 2-D array
 
         kwargs all are passed to :meth:`~matplotlib.axes.Axes.imshow`.
-        :meth:`matshow` sets defaults for *extent*, *origin*,
-        *interpolation*, and *aspect*; use care in overriding the
-        *extent* and *origin* kwargs, because they interact.  (Also,
-        if you want to change them, you probably should be using
-        imshow directly in your own version of matshow.)
+        :meth:`matshow` sets defaults for *origin*,
+        *interpolation*, and *aspect*; if you want row zero to
+        be at the bottom instead of the top, you can set the *origin*
+        kwarg to "lower".
 
         Returns: an :class:`matplotlib.image.AxesImage` instance.
         '''
-        Z = np.asarray(Z)
+        Z = np.asanyarray(Z)
         nr, nc = Z.shape
-        extent = [-0.5, nc-0.5, nr-0.5, -0.5]
-        kw = {'extent': extent,
-              'origin': 'upper',
+        kw = {'origin': 'upper',
               'interpolation': 'nearest',
               'aspect': 'equal'}          # (already the imshow default)
         kw.update(kwargs)
@@ -8337,34 +8256,41 @@ class Axes(martist.Artist):
                                                  integer=True))
         return im
 
-
-    def get_tightbbox(self, renderer):
+    def get_tightbbox(self, renderer, call_axes_locator=True):
         """
         return the tight bounding box of the axes.
         The dimension of the Bbox in canvas coordinate.
+
+        If call_axes_locator is False, it does not call the
+        _axes_locator attribute, which is necessary to get the correct
+        bounding box. call_axes_locator==False can be used if the
+        caller is only intereted in the relative size of the tightbbox
+        compared to the axes bbox.
         """
 
         artists = []
         bb = []
 
-        artists.append(self)
+        if not self.get_visible():
+            return None
+
+        locator = self.get_axes_locator()
+        if locator and call_axes_locator:
+            pos = locator(self, renderer)
+            self.apply_aspect(pos)
+        else:
+            self.apply_aspect()
+
+        bb.append(self.get_window_extent(renderer))
 
         if self.title.get_visible():
-            artists.append(self.title)
+            bb.append(self.title.get_window_extent(renderer))
 
-        if self.xaxis.get_visible():
-            artists.append(self.xaxis.label)
-            bbx1, bbx2 = self.xaxis.get_ticklabel_extents(renderer)
-            self.xaxis._update_label_position([bbx1], [bbx2])
-            bb.extend([bbx1, bbx2])
-        if self.yaxis.get_visible():
-            artists.append(self.yaxis.label)
-            bby1, bby2 = self.yaxis.get_ticklabel_extents(renderer)
-            self.yaxis._update_label_position([bby1], [bby2])
-            bb.extend([bby1, bby2])
+        bb_xaxis = self.xaxis.get_tightbbox(renderer)
+        if bb_xaxis: bb.append(bb_xaxis)
 
-
-        bb.extend([c.get_window_extent(renderer) for c in artists if c.get_visible()])
+        bb_yaxis = self.yaxis.get_tightbbox(renderer)
+        if bb_yaxis: bb.append(bb_yaxis)
 
         _bbox = mtransforms.Bbox.union([b for b in bb if b.width!=0 or b.height!=0])
 

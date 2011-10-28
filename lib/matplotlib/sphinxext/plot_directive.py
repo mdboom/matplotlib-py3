@@ -468,6 +468,8 @@ def run_code(code, code_path, ns=None, function_name=None):
                     exec "import numpy as np\nfrom matplotlib import pyplot as plt\n" in ns
                 else:
                     exec setup.config.plot_pre_code in ns
+            if "__main__" in code:
+                exec "__name__ = '__main__'" in ns
             exec code in ns
             if function_name is not None:
                 exec function_name + "()" in ns
@@ -577,7 +579,7 @@ def render_figures(code, code_path, output_dir, output_base, context,
             for format, dpi in formats:
                 try:
                     figman.canvas.figure.savefig(img.filename(format), dpi=dpi)
-                except exceptions.BaseException as err:
+                except Exception,err:
                     raise PlotError(traceback.format_exc())
                 img.formats.append(format)
 
@@ -617,9 +619,8 @@ def run(arguments, content, options, state_machine, state, lineno):
         else:
             function_name = None
 
-        fd = open(source_file_name, 'r')
-        code = fd.read()
-        fd.close()
+        with open(source_file_name, 'r') as fd:
+            code = fd.read()
         output_base = os.path.basename(source_file_name)
     else:
         source_file_name = rst_file
@@ -658,14 +659,19 @@ def run(arguments, content, options, state_machine, state, lineno):
     build_dir = os.path.join(os.path.dirname(setup.app.doctreedir),
                              'plot_directive',
                              source_rel_dir)
+    # get rid of .. in paths, also changes pathsep
+    # see note in Python docs for warning about symbolic links on Windows.
+    # need to compare source and dest paths at end
+    build_dir = os.path.normpath(build_dir)
+
     if not os.path.exists(build_dir):
-        cbook.mkdirs(build_dir)
+        os.makedirs(build_dir)
 
     # output_dir: final location in the builder's directory
     dest_dir = os.path.abspath(os.path.join(setup.app.builder.outdir,
                                             source_rel_dir))
     if not os.path.exists(dest_dir):
-        cbook.mkdirs(dest_dir)
+        os.makedirs(dest_dir) # no problem here for me, but just use built-ins
 
     # how to link to files from the RST file
     dest_dir_link = os.path.join(relpath(setup.confdir, rst_dir),
@@ -681,7 +687,8 @@ def run(arguments, content, options, state_machine, state, lineno):
     except PlotError, err:
         reporter = state.memo.reporter
         sm = reporter.system_message(
-            2, "Exception occurred in plotting %s: %s" % (output_base, err),
+            2, "Exception occurred in plotting %s\n from %s:\n%s" % (output_base,
+                                                source_file_name, err),
             line=lineno)
         results = [(code, [])]
         errors = [sm]
@@ -739,21 +746,21 @@ def run(arguments, content, options, state_machine, state, lineno):
     if total_lines:
         state_machine.insert_input(total_lines, source=source_file_name)
 
-    # copy image files to builder's output directory
+    # copy image files to builder's output directory, if necessary
     if not os.path.exists(dest_dir):
         cbook.mkdirs(dest_dir)
 
     for code_piece, images in results:
         for img in images:
             for fn in img.filenames():
-                shutil.copyfile(fn, os.path.join(dest_dir,
-                                                 os.path.basename(fn)))
+                destimg = os.path.join(dest_dir, os.path.basename(fn))
+                if fn != destimg:
+                    shutil.copyfile(fn, destimg)
 
     # copy script (if necessary)
     if source_file_name == rst_file:
         target_name = os.path.join(dest_dir, output_base + source_ext)
-        f = open(target_name, 'w')
-        f.write(unescape_doctest(code))
-        f.close()
+        with open(target_name, 'w') as f:
+            f.write(unescape_doctest(code))
 
     return errors

@@ -107,6 +107,7 @@ def validate_backend(s):
     if s.startswith('module://'): return s
     else: return _validate_standard_backends(s)
 
+validate_qt4 = ValidateInStrings('backend.qt4', ['PyQt4', 'PySide'])
 
 validate_toolbar = ValidateInStrings('toolbar',[
     'None','classic','toolbar2',
@@ -306,6 +307,11 @@ validate_legend_loc = ValidateInStrings('legend_loc',[
   'center',
 ], ignorecase=True)
 
+def deprecate_svg_embed_char_paths(value):
+    warnings.warn("svg.embed_char_paths is deprecated.  Use svg.fonttype instead.")
+
+validate_svg_fonttype = ValidateInStrings('fonttype', ['none', 'path', 'svgfont'])
+
 class ValidateInterval:
     """
     Value must be in interval
@@ -337,6 +343,7 @@ class ValidateInterval:
 defaultParams = {
     'backend'           : ['Agg', validate_backend], # agg is certainly present
     'backend_fallback'  : [True, validate_bool], # agg is certainly present
+    'backend.qt4'       : ['PyQt4', validate_qt4],
     'toolbar'           : ['toolbar2', validate_toolbar],
     'datapath'          : [None, validate_path_exists],   # handled by _get_data_path_cached
     'interactive'       : [False, validate_bool],
@@ -437,11 +444,13 @@ defaultParams = {
     'axes.titlesize'        : ['large', validate_fontsize], # fontsize of the axes title
     'axes.grid'             : [False, validate_bool],   # display grid or not
     'axes.labelsize'        : ['medium', validate_fontsize], # fontsize of the x any y labels
+    'axes.labelweight'      : ['normal', str], # fontsize of the x any y labels
     'axes.labelcolor'       : ['k', validate_color],    # color of axis label
     'axes.formatter.limits' : [[-7, 7], validate_nseq_int(2)],
                                # use scientific notation if log10
                                # of the axis range is smaller than the
                                # first or larger than the second
+    'axes.formatter.use_locale' : [False, validate_bool], # Use the current locale to format ticks
     'axes.unicode_minus'        : [True, validate_bool],
     'axes.color_cycle'      : [['b','g','r','c','m','y','k'],
                                     validate_colorlist], # cycle of plot
@@ -458,12 +467,14 @@ defaultParams = {
     'legend.fontsize'    : ['large', validate_fontsize],
     'legend.markerscale' : [1.0, validate_float], # the relative size of legend markers vs. original
     'legend.shadow'        : [False, validate_bool],
+    'legend.frameon'     : [True, validate_bool], # whether or not to draw a frame around legend
 
 
     # the following dimensions are in fraction of the font size
     'legend.borderpad'   : [0.4, validate_float], # units are fontsize
     'legend.labelspacing'      : [0.5, validate_float], # the vertical space between the legend entries
     'legend.handlelength'     : [2., validate_float], # the length of the legend lines
+    'legend.handleheight'     : [0.7, validate_float], # the length of the legend lines
     'legend.handletextpad' : [.8, validate_float], # the space between the legend line and legend text
     'legend.borderaxespad'       : [0.5, validate_float], # the border between the axes and legend edge
     'legend.columnspacing'       : [2., validate_float], # the border between the axes and legend edge
@@ -531,7 +542,8 @@ defaultParams = {
     'pdf.fonttype'      : [3, validate_fonttype],  # 3 (Type3) or 42 (Truetype)
     'svg.image_inline'  : [True, validate_bool],    # write raster image data directly into the svg file
     'svg.image_noscale' : [False, validate_bool],  # suppress scaling of raster data embedded in SVG
-    'svg.embed_char_paths' : [True, validate_bool],  # True to save all characters as paths in the SVG
+    'svg.embed_char_paths' : [True, deprecate_svg_embed_char_paths],  # True to save all characters as paths in the SVG
+    'svg.fonttype' : ['path', validate_svg_fonttype],
 
     'docstring.hardcopy' : [False, validate_bool],  # set this when you want to generate hardcopy docstring
     'plugins.directory' : ['.matplotlib_plugins', str], # where plugin directory is locate

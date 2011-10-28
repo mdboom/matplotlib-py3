@@ -233,7 +233,8 @@ def win32InstalledFonts(directory=None, fontext='ttf'):
                     continue
                 except WindowsError:
                     continue
-
+                except MemoryError:
+                    continue
             return items.keys()
         finally:
             _winreg.CloseKey(local)
@@ -550,7 +551,7 @@ def createFontList(fontfiles, fontext='ttf'):
         else: seen[fname] = 1
         if fontext == 'afm':
             try:
-                fh = open(fpath, 'r')
+                fh = open(fpath, 'rb')
             except:
                 verbose.report("Could not open font file %s" % fpath)
                 continue
@@ -912,22 +913,16 @@ def pickle_dump(data, filename):
     Equivalent to pickle.dump(data, open(filename, 'w'))
     but closes the file to prevent filehandle leakage.
     """
-    fh = open(filename, 'wb')
-    try:
+    with open(filename, 'wb') as fh:
         pickle.dump(data, fh)
-    finally:
-        fh.close()
 
 def pickle_load(filename):
     """
     Equivalent to pickle.load(open(filename, 'r'))
     but closes the file to prevent filehandle leakage.
     """
-    fh = open(filename, 'rb')
-    try:
+    with open(filename, 'rb') as fh:
         data = pickle.load(fh)
-    finally:
-        fh.close()
     return data
 
 class FontManager:
@@ -942,7 +937,7 @@ class FontManager:
     # Increment this version number whenever the font cache data
     # format or behavior has changed and requires a existing font
     # cache files to be rebuilt.
-    __version__ = 100
+    __version__ = 101
 
     def __init__(self, size=None, weight='normal'):
         self._version = self.__version__
@@ -988,7 +983,7 @@ class FontManager:
         self.afmfiles = findSystemFonts(paths, fontext='afm') + \
             findSystemFonts(fontext='afm')
         self.afmlist = createFontList(self.afmfiles, fontext='afm')
-        self.defaultFont['afm'] = None
+        self.defaultFont['afm'] = self.afmfiles[0]
 
         self.ttf_lookup_cache = {}
         self.afm_lookup_cache = {}
@@ -1249,9 +1244,8 @@ def is_opentype_cff_font(filename):
     if os.path.splitext(filename)[1].lower() == '.otf':
         result = _is_opentype_cff_font_cache.get(filename)
         if result is None:
-            fd = open(filename, 'rb')
-            tag = fd.read(4)
-            fd.close()
+            with open(filename, 'rb') as fd:
+                tag = fd.read(4)
             result = (tag == 'OTTO')
             _is_opentype_cff_font_cache[filename] = result
         return result

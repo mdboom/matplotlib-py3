@@ -183,8 +183,10 @@ def _is_writable_dir(p):
     except TypeError: return False
     try:
         t = tempfile.TemporaryFile(dir=p)
-        t.write(ascii('1'))
-        t.close()
+        try:
+            t.write(ascii('1'))
+        finally:
+            t.close()
     except OSError: return False
     else: return True
 
@@ -622,6 +624,7 @@ _deprecated_map = {
     'text.fontweight':  'font.weight',
     'text.fontsize':    'font.size',
     'tick.size' :       'tick.major.size',
+    'svg.embed_char_paths' : 'svg.fonttype'
     }
 
 _deprecated_ignore_map = {
@@ -702,21 +705,22 @@ def rc_params(fail_on_error=False):
 
     cnt = 0
     rc_temp = {}
-    for line in open(fname):
-        cnt += 1
-        strippedline = line.split('#',1)[0].strip()
-        if not strippedline: continue
-        tup = strippedline.split(':',1)
-        if len(tup) !=2:
-            warnings.warn('Illegal line #%d\n\t%s\n\tin file "%s"'%\
-                          (cnt, line, fname))
-            continue
-        key, val = tup
-        key = key.strip()
-        val = val.strip()
-        if key in rc_temp:
-            warnings.warn('Duplicate key in file "%s", line #%d'%(fname,cnt))
-        rc_temp[key] = (val, line, cnt)
+    with open(fname) as fd:
+        for line in fd:
+            cnt += 1
+            strippedline = line.split('#',1)[0].strip()
+            if not strippedline: continue
+            tup = strippedline.split(':',1)
+            if len(tup) !=2:
+                warnings.warn('Illegal line #%d\n\t%s\n\tin file "%s"'%\
+                              (cnt, line, fname))
+                continue
+            key, val = tup
+            key = key.strip()
+            val = val.strip()
+            if key in rc_temp:
+                warnings.warn('Duplicate key in file "%s", line #%d'%(fname,cnt))
+            rc_temp[key] = (val, line, cnt)
 
     ret = RcParams([ (key, default) for key, (default, converter) in \
                     defaultParams.iteritems() ])
@@ -797,7 +801,9 @@ rcParamsDefault = RcParams([ (key, default) for key, (default, converter) in \
 rcParams['ps.usedistiller'] = checkdep_ps_distiller(rcParams['ps.usedistiller'])
 rcParams['text.usetex'] = checkdep_usetex(rcParams['text.usetex'])
 
-
+if rcParams['axes.formatter.use_locale']:
+    import locale
+    locale.setlocale(locale.LC_ALL, '')
 
 def rc(group, **kwargs):
     """
@@ -976,12 +982,14 @@ default_test_modules = [
     'matplotlib.tests.test_mlab',
     'matplotlib.tests.test_transforms',
     'matplotlib.tests.test_axes',
+    'matplotlib.tests.test_figure',
     'matplotlib.tests.test_dates',
     'matplotlib.tests.test_spines',
     'matplotlib.tests.test_image',
     'matplotlib.tests.test_simplification',
     'matplotlib.tests.test_mathtext',
-    'matplotlib.tests.test_text'
+    'matplotlib.tests.test_text',
+    'matplotlib.tests.test_tightlayout'
     ]
 
 def test(verbosity=0):

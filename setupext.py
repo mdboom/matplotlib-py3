@@ -55,6 +55,7 @@ basedir = {
     'linux2-mips' : ['/usr/local', '/usr'],
     'linux2-sparc' : ['/usr/local', '/usr'],
     'linux2' : ['/usr/local', '/usr'],
+    'linux3' : ['/usr/local', '/usr'],
     'linux'  : ['/usr/local', '/usr',],
     'cygwin' : ['/usr/local', '/usr',],
     '_darwin' : ['/sw/lib/freetype2', '/sw/lib/freetype219', '/usr/local',
@@ -773,8 +774,13 @@ def check_for_tk():
                 gotit = False
 
     if gotit:
+        try:
+            tk_v = Tkinter.__version__.split()[-2]
+        except (AttributeError, IndexError):
+            # Tkinter.__version__ has been removed in python 3
+            tk_v = 'version not identified'
         print_status("Tkinter", "Tkinter: %s, Tk: %s, Tcl: %s" %
-                     (Tkinter.__version__, Tkinter.TkVersion, Tkinter.TclVersion))
+                     (tk_v, Tkinter.TkVersion, Tkinter.TclVersion))
     else:
         print_status("Tkinter", "no")
     if explanation is not None:
@@ -841,60 +847,55 @@ def query_tcltk():
     return TCL_TK_CACHE
 
 def parse_tcl_config(tcl_lib_dir, tk_lib_dir):
-    # This is where they live on Ubuntu Hardy (at least)
-    tcl_config = os.path.join(tcl_lib_dir, "tclConfig.sh")
-    tk_config = os.path.join(tk_lib_dir, "tkConfig.sh")
-    if not (os.path.exists(tcl_config) and os.path.exists(tk_config)):
-        # This is where they live on RHEL4 (at least)
-        tcl_config = "/usr/lib/tclConfig.sh"
-        tk_config = "/usr/lib/tkConfig.sh"
-        if not (os.path.exists(tcl_config) and os.path.exists(tk_config)):
-            return None
-
-    # These files are shell scripts that set a bunch of
-    # environment variables.  To actually get at the
-    # values, we use ConfigParser, which supports almost
-    # the same format, but requires at least one section.
-    # So, we push a "[default]" section to a copy of the
-    # file in a StringIO object.
     try:
-        tcl_vars_str = StringIO("[default]\n" + open(tcl_config, "r").read())
-        tk_vars_str = StringIO("[default]\n" + open(tk_config, "r").read())
-    except IOError:
-        # if we can't read the file, that's ok, we'll try
-        # to guess instead
-        return None
-
-    tcl_vars_str.seek(0)
-    tcl_vars = configparser.RawConfigParser()
-    tk_vars_str.seek(0)
-    tk_vars = configparser.RawConfigParser()
-    try:
-        tcl_vars.readfp(tcl_vars_str)
-        tk_vars.readfp(tk_vars_str)
-    except configparser.ParsingError:
-        # if we can't read the file, that's ok, we'll try
-        # to guess instead
-        return None
-
-    try:
-        tcl_lib = tcl_vars.get("default", "TCL_LIB_SPEC")[1:-1].split()[0][2:]
-        tcl_inc = tcl_vars.get("default", "TCL_INCLUDE_SPEC")[3:-1]
-
-        tk_lib = tk_vars.get("default", "TK_LIB_SPEC")[1:-1].split()[0][2:]
-        if tk_vars.has_option("default", "TK_INCLUDE_SPEC"):
-            # On Ubuntu 8.04
-            tk_inc = tk_vars.get("default", "TK_INCLUDE_SPEC")[3:-1]
+        if sys.version_info[0] < 3:
+            import Tkinter
         else:
-            # On RHEL4
-            tk_inc = tcl_inc
-    except (configparser.NoSectionError, configparser.NoOptionError):
+            import tkinter as Tkinter
+    except ImportError:
         return None
 
-    if not os.path.exists(os.path.join(tk_inc, 'tk.h')):
+    tcl_poss = [tcl_lib_dir,
+                os.path.normpath(os.path.join(tcl_lib_dir, '..')),
+                "/usr/lib/tcl"+str(Tkinter.TclVersion),
+                "/usr/lib"]
+    tk_poss = [tk_lib_dir,
+                os.path.normpath(os.path.join(tk_lib_dir, '..')),
+               "/usr/lib/tk"+str(Tkinter.TkVersion),
+               "/usr/lib"]
+    for ptcl, ptk in zip(tcl_poss, tk_poss):
+        tcl_config = os.path.join(ptcl, "tclConfig.sh")
+        tk_config = os.path.join(ptk, "tkConfig.sh")
+        if (os.path.exists(tcl_config) and os.path.exists(tk_config)):
+            break
+    if not (os.path.exists(tcl_config) and os.path.exists(tk_config)):
         return None
 
-    return tcl_lib, tcl_inc, tk_lib, tk_inc
+    def get_var(file, varname):
+        p = subprocess.Popen(
+            '. %s ; eval echo ${%s}' % (file, varname),
+            shell=True,
+            executable="/bin/sh",
+            stdout=subprocess.PIPE)
+        result = p.communicate()[0]
+        return result.decode('ascii')
+
+    tcl_lib_dir = get_var(tcl_config, 'TCL_LIB_SPEC').split()[0][2:].strip()
+    tcl_inc_dir = get_var(tcl_config, 'TCL_INCLUDE_SPEC')[2:].strip()
+    tcl_lib = get_var(tcl_config, 'TCL_LIB_FLAG')[2:].strip()
+
+    tk_lib_dir = get_var(tk_config, 'TK_LIB_SPEC').split()[0][2:].strip()
+    tk_inc_dir = get_var(tk_config, 'TK_INCLUDE_SPEC').strip()
+    if tk_inc_dir == '':
+        tk_inc_dir = tcl_inc_dir
+    else:
+        tk_inc_dir = tk_inc_dir[2:]
+    tk_lib = get_var(tk_config, 'TK_LIB_FLAG')[2:].strip()
+
+    if not os.path.exists(os.path.join(tk_inc_dir, 'tk.h')):
+        return None
+
+    return tcl_lib_dir, tcl_inc_dir, tcl_lib, tk_lib_dir, tk_inc_dir, tk_lib
 
 def guess_tcl_config(tcl_lib_dir, tk_lib_dir, tk_ver):
     if not (os.path.exists(tcl_lib_dir) and os.path.exists(tk_lib_dir)):
@@ -929,14 +930,14 @@ def guess_tcl_config(tcl_lib_dir, tk_lib_dir, tk_ver):
     if not os.path.exists(os.path.join(tk_inc, 'tk.h')):
         return None
 
-    return tcl_lib, tcl_inc, tk_lib, tk_inc
+    return tcl_lib, tcl_inc, 'tcl' + tk_ver, tk_lib, tk_inc, 'tk' + tk_ver
 
 def hardcoded_tcl_config():
     tcl_inc = "/usr/local/include"
     tk_inc = "/usr/local/include"
     tcl_lib = "/usr/local/lib"
     tk_lib = "/usr/local/lib"
-    return tcl_lib, tcl_inc, tk_lib, tk_inc
+    return tcl_lib, tcl_inc, 'tcl', tk_lib, tk_inc, 'tk'
 
 def add_tk_flags(module):
     'Add the module flags to build extensions which use tk'
@@ -1037,10 +1038,10 @@ so that setup can determine where your libraries are located."""
                     result = hardcoded_tcl_config()
 
         # Add final versions of directories and libraries to module lists
-        tcl_lib, tcl_inc, tk_lib, tk_inc = result
-        module.include_dirs.extend([tcl_inc, tk_inc])
-        module.library_dirs.extend([tcl_lib, tk_lib])
-        module.libraries.extend(['tk' + tk_ver, 'tcl' + tk_ver])
+        tcl_lib_dir, tcl_inc_dir, tcl_lib, tk_lib_dir, tk_inc_dir, tk_lib = result
+        module.include_dirs.extend([tcl_inc_dir, tk_inc_dir])
+        module.library_dirs.extend([tcl_lib_dir, tk_lib_dir])
+        module.libraries.extend([tcl_lib, tk_lib])
 
     return message
 
@@ -1212,6 +1213,7 @@ def build_path(ext_modules, packages):
     if BUILT_PATH: return # only build it if you you haven't already
 
     agg = (
+           'agg_vcgen_contour.cpp',
            'agg_curves.cpp',
            'agg_bezier_arc.cpp',
            'agg_trans_affine.cpp',

@@ -9,7 +9,7 @@ import time, datetime
 import warnings
 import numpy as np
 import numpy.ma as ma
-from weakref import ref
+from weakref import ref, WeakKeyDictionary
 import cPickle
 import os.path
 import random
@@ -44,7 +44,8 @@ import matplotlib
 # side effects.  Passing False eliminates those side effects.
 
 try:
-    preferredencoding = locale.getpreferredencoding(False).strip()
+    preferredencoding = locale.getpreferredencoding(
+        matplotlib.rcParams['axes.formatter.use_locale']).strip()
     if not preferredencoding:
         preferredencoding = None
 except (ValueError, ImportError, AttributeError):
@@ -135,15 +136,13 @@ class CallbackRegistry:
     Handle registering and disconnecting for a set of signals and
     callbacks::
 
-       signals = 'eat', 'drink', 'be merry'
-
        def oneat(x):
            print 'eat', x
 
        def ondrink(x):
            print 'drink', x
 
-       callbacks = CallbackRegistry(signals)
+       callbacks = CallbackRegistry()
 
        ideat = callbacks.connect('eat', oneat)
        iddrink = callbacks.connect('drink', ondrink)
@@ -237,34 +236,27 @@ class CallbackRegistry:
             '''
             return not self.__eq__(other)
 
-    def __init__(self, signals):
-        '*signals* is a sequence of valid signals'
-        self.signals = set(signals)
-        self.callbacks = dict([(s, dict()) for s in signals])
+    def __init__(self, *args):
+        if len(args):
+            warnings.warn(
+                'CallbackRegistry no longer requires a list of callback types.  Ignoring arguments',
+                DeprecationWarning)
+        self.callbacks = dict()
         self._cid = 0
-
-    def _check_signal(self, s):
-        'make sure *s* is a valid signal or raise a ValueError'
-        if s not in self.signals:
-            signals = list(self.signals)
-            signals.sort()
-            raise ValueError('Unknown signal "%s"; valid signals are %s'%(s, signals))
+        self._func_cid_map = WeakKeyDictionary()
 
     def connect(self, s, func):
         """
         register *func* to be called when a signal *s* is generated
         func will be called
         """
-        self._check_signal(s)
+        if func in self._func_cid_map:
+            return self._func_cid_map[func]
         proxy = self.BoundMethodProxy(func)
-        for cid, callback in self.callbacks[s].items():
-            # Clean out dead references
-            if callback.inst is not None and callback.inst() is None:
-                del self.callbacks[s][cid]
-            elif callback == proxy:
-                return cid
         self._cid += 1
+        self.callbacks.setdefault(s, dict())
         self.callbacks[s][self._cid] = proxy
+        self._func_cid_map[func] = self._cid
         return self._cid
 
     def disconnect(self, cid):
@@ -284,13 +276,13 @@ class CallbackRegistry:
         process signal *s*.  All of the functions registered to receive
         callbacks on *s* will be called with *\*args* and *\*\*kwargs*
         """
-        self._check_signal(s)
-        for cid, proxy in self.callbacks[s].items():
-            # Clean out dead references
-            if proxy.inst is not None and proxy.inst() is None:
-                del self.callbacks[s][cid]
-            else:
-                proxy(*args, **kwargs)
+        if s in self.callbacks:
+            for cid, proxy in self.callbacks[s].items():
+                # Clean out dead references
+                if proxy.inst is not None and proxy.inst() is None:
+                    del self.callbacks[s][cid]
+                else:
+                    proxy(*args, **kwargs)
 
 
 class Scheduler(threading.Thread):
@@ -511,9 +503,8 @@ def _get_data_server(cache_dir, baseurl):
                 self.cache = {}
                 return
 
-            f = open(fn, 'rb')
-            cache = cPickle.load(f)
-            f.close()
+            with open(fn, 'rb') as f:
+                cache = cPickle.load(f)
 
             # Earlier versions did not have the full paths in cache.pck
             for url, (fn, x, y) in cache.items():
@@ -556,9 +547,8 @@ def _get_data_server(cache_dir, baseurl):
             Write the cache data structure into the cache directory.
             """
             fn = self.in_cache_dir('cache.pck')
-            f = open(fn, 'wb')
-            cPickle.dump(self.cache, f, -1)
-            f.close()
+            with open(fn, 'wb') as f:
+                cPickle.dump(self.cache, f, -1)
 
         def cache_file(self, url, data, headers):
             """
@@ -568,9 +558,8 @@ def _get_data_server(cache_dir, baseurl):
             fn = url[len(self.baseurl):]
             fullpath = self.in_cache_dir(fn)
 
-            f = open(fullpath, 'wb')
-            f.write(data)
-            f.close()
+            with open(fullpath, 'wb') as f:
+                f.write(data)
 
             # Update the cache
             self.cache[url] = (fullpath, headers.get('ETag'),
@@ -602,8 +591,8 @@ def _get_data_server(cache_dir, baseurl):
             matplotlib.verbose.report(
                 'ViewVCCachedServer: reading data file from cache file "%s"'
                 %fn, 'debug')
-            file = open(fn, 'rb')
-            handle = urllib2.addinfourl(file, hdrs, url)
+            with open(fn, 'rb') as file:
+                handle = urllib2.addinfourl(file, hdrs, url)
             handle.code = 304
             return handle
 

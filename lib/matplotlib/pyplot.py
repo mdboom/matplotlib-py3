@@ -15,7 +15,7 @@ is recommended that the namespaces be kept separate, e.g.::
 """
 from __future__ import print_function
 
-import sys
+import sys, warnings
 
 import matplotlib
 from matplotlib import _pylab_helpers, interactive
@@ -93,7 +93,7 @@ _backend_selection()
 ## Global ##
 
 from matplotlib.backends import pylab_setup
-new_figure_manager, draw_if_interactive, show = pylab_setup()
+new_figure_manager, draw_if_interactive, _show = pylab_setup()
 
 @docstring.copy_dedent(Artist.findobj)
 def findobj(o=None, match=None):
@@ -114,16 +114,28 @@ def switch_backend(newbackend):
     Calling this command will close all open windows.
     """
     close('all')
-    global new_figure_manager, draw_if_interactive, show
+    global new_figure_manager, draw_if_interactive, _show
     matplotlib.use(newbackend, warn=False)
     reload(matplotlib.backends)
     from matplotlib.backends import pylab_setup
-    new_figure_manager, draw_if_interactive, show = pylab_setup()
+    new_figure_manager, draw_if_interactive, _show = pylab_setup()
+
+
+def show():
+    """
+    In non-interactive mode, display all figures and block until
+    the figures have been closed; in interactive mode it has no
+    effect unless figures were created prior to a change from
+    non-interactive to interactive mode (not recommended).  In
+    that case it displays the figures but does not block.
+    """
+    global _show
+    _show()
 
 
 def isinteractive():
     """
-    Return the interactive status
+    Return *True* if matplotlib is in interactive mode, *False* otherwise.
     """
     return matplotlib.is_interactive()
 
@@ -134,6 +146,41 @@ def ioff():
 def ion():
     'Turn interactive mode on.'
     matplotlib.interactive(True)
+
+def pause(interval):
+    """
+    Pause for *interval* seconds.
+
+    If there is an active figure it will be updated and displayed,
+    and the gui event loop will run during the pause.
+
+    If there is no active figure, or if a non-interactive backend
+    is in use, this executes time.sleep(interval).
+
+    This can be used for crude animation. For more complex
+    animation, see :mod:`matplotlib.animation`.
+
+    """
+    backend = rcParams['backend']
+    if backend in _interactive_bk:
+        figManager = _pylab_helpers.Gcf.get_active()
+        if figManager is not None:
+            canvas = figManager.canvas
+            canvas.draw()
+            was_interactive = isinteractive()
+            if not was_interactive:
+                ion()
+                show()
+            canvas.start_event_loop(interval)
+            if not was_interactive:
+                ioff()
+            return
+
+    # No on-screen figure is active, so sleep() is all we need.
+    import time
+    time.sleep(interval)
+
+
 
 @docstring.copy_dedent(matplotlib.rc)
 def rc(*args, **kwargs):
@@ -218,6 +265,14 @@ def figure(num=None, # autoincrement if None, else integer from 1-N
 
       figure(1)
 
+    The same applies if *num* is a string. In this case *num* will be used
+    as an explicit figure label::
+
+      figure("today")
+
+    and in windowed backends, the window title will be set to this figure
+    label.
+
     If you are creating many figures, make sure you explicitly call "close"
     on the figures you are not using, because this will enable pylab
     to properly clean up the memory.
@@ -248,15 +303,28 @@ def figure(num=None, # autoincrement if None, else integer from 1-N
     if facecolor is None : facecolor = rcParams['figure.facecolor']
     if edgecolor is None : edgecolor = rcParams['figure.edgecolor']
 
+    allnums = get_fignums()
+    figLabel = ''
     if num is None:
-        allnums = [f.num for f in _pylab_helpers.Gcf.get_all_fig_managers()]
         if allnums:
             num = max(allnums) + 1
         else:
             num = 1
+    elif is_string_like(num):
+        figLabel = num
+        allLabels = get_figlabels()
+        if figLabel not in allLabels:
+            if figLabel == 'all':
+                warnings.warn("close('all') closes all existing figures")
+            if len(allLabels):
+                num = max(allnums) + 1
+            else:
+                num = 1
+        else:
+            inum = allLabels.index(figLabel)
+            num = allnums[inum]
     else:
         num = int(num)  # crude validation of num argument
-
 
     figManager = _pylab_helpers.Gcf.get_fig_manager(num)
     if figManager is None:
@@ -269,6 +337,10 @@ def figure(num=None, # autoincrement if None, else integer from 1-N
                                              frameon=frameon,
                                              FigureClass=FigureClass,
                                              **kwargs)
+
+        if figLabel:
+            figManager.set_window_title(figLabel)
+            figManager.canvas.figure.set_label(figLabel)
 
         # make this figure current on button press event
         def make_active(event):
@@ -300,6 +372,12 @@ def get_fignums():
     fignums.sort()
     return fignums
 
+def get_figlabels():
+    "Return a list of existing figure labels."
+    figManagers = _pylab_helpers.Gcf.get_all_fig_managers()
+    figManagers.sort(key=lambda m: m.num)
+    return [m.canvas.figure.get_label() for m in figManagers]
+
 def get_current_fig_manager():
     figManager = _pylab_helpers.Gcf.get_active()
     if figManager is None:
@@ -321,9 +399,11 @@ def close(*args):
 
     ``close()`` by itself closes the current figure
 
+    ``close(h)`` where *h* is a :class:`Figure` instance, closes that figure
+
     ``close(num)`` closes figure number *num*
 
-    ``close(h)`` where *h* is a :class:`Figure` instance, closes that figure
+    ``close(name)`` where *name* is a string, closes figure with that label
 
     ``close('all')`` closes all the figure windows
     """
@@ -339,6 +419,11 @@ def close(*args):
             _pylab_helpers.Gcf.destroy_all()
         elif isinstance(arg, int):
             _pylab_helpers.Gcf.destroy(arg)
+        elif is_string_like(arg):
+            allLabels = get_figlabels()
+            if arg in allLabels:
+                num = get_fignums()[allLabels.index(arg)]
+                _pylab_helpers.Gcf.destroy(num)
         elif isinstance(arg, Figure):
             _pylab_helpers.Gcf.destroy_fig(arg)
         else:
@@ -355,7 +440,25 @@ def clf():
     draw_if_interactive()
 
 def draw():
-    'redraw the current figure'
+    """
+    Redraw the current figure.
+
+    This is used in interactive mode to update a figure that
+    has been altered using one or more plot object method calls;
+    it is not needed if figure modification is done entirely
+    with pyplot functions, if a sequence of modifications ends
+    with a pyplot function, or if matplotlib is in non-interactive
+    mode and the sequence of modifications ends with :func:`show` or
+    :func:`savefig`.
+
+    A more object-oriented alternative, given any
+    :class:`~matplotlib.figure.Figure` instance, :attr:`fig`, that
+    was created using a :module:`~matplotlib.pyplot` function, is::
+
+        fig.canvas.draw()
+
+
+    """
     get_current_fig_manager().canvas.draw()
 
 @docstring.copy_dedent(Figure.savefig)
@@ -800,7 +903,9 @@ def subplots(nrows=1, ncols=1, sharex=False, sharey=False, squeeze=True,
             ret = fig, axarr[0,0]
         else:
             ret = fig, axarr.squeeze()
-
+    else:
+        # returned axis array will be always 2-d, even if nrows=ncols=1
+        ret = fig, axarr.reshape(nrows, ncols)
 
     return ret
 
@@ -922,6 +1027,25 @@ def subplot_tool(targetfig=None):
     rcParams['toolbar'] = tbar
     _pylab_helpers.Gcf.set_active(manager)  # restore the current figure
     return ret
+
+
+
+def tight_layout(pad=1.2, h_pad=None, w_pad=None):
+    """Adjust subplot parameters to give specified padding.
+
+    Parameters
+    ----------
+    pad : float
+        padding between the figure edge and the edges of subplots, as a fraction of the font-size.
+    h_pad, w_pad : float
+        padding (height/width) between edges of adjacent subplots.
+        Defaults to `pad_inches`.
+    """
+
+    fig = gcf()
+    fig.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+    draw_if_interactive()
+
 
 
 def box(on=None):
@@ -1416,7 +1540,9 @@ def plotting():
     setp            set a graphics property
     semilogx        log x axis
     semilogy        log y axis
-    show            show the figures
+    show            in non-interactive mode, display all figures and block
+                    until they have been closed; in interactive mode,
+                    show generally has no effect.
     specgram        a spectrogram plot
     stem            make a stem plot
     subplot         make a subplot (numrows, numcols, axesnum)
@@ -1623,8 +1749,10 @@ def matshow(A, fignum=None, **kw):
 
     Tick labels for the xaxis are placed on top.
 
-    With the exception of fignum, keyword arguments are passed to
-    :func:`~matplotlib.pyplot.imshow`.
+    With the exception of *fignum*, keyword arguments are passed to
+    :func:`~matplotlib.pyplot.imshow`.  You may set the *origin*
+    kwarg to "lower" if you want the first row in the array to be
+    at the bottom instead of the top.
 
 
     *fignum*: [ None | integer | False ]
@@ -1637,6 +1765,7 @@ def matshow(A, fignum=None, **kw):
 
       If *fignum* is *False* or 0, a new figure window will **NOT** be created.
     """
+    A = np.asanyarray(A)
     if fignum is False or fignum is 0:
         ax = gca()
     else:

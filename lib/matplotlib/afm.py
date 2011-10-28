@@ -51,7 +51,11 @@ def _to_int(x):
     return int(float(x))
 
 _to_float = float
-_to_str =  str
+if sys.version_info[0] >= 3:
+    def _to_str(x):
+        return x.decode('utf8')
+else:
+    _to_str = str
 
 def _to_list_of_ints(s):
     s = s.replace(b',', b' ')
@@ -141,7 +145,7 @@ def _parse_header(fh):
         if len( lst ) == 2:
             val = lst[1]
         else:
-            val = ''
+            val = b''
         #key, val = line.split(' ', 1)
         try: d[key] = headerConverters[key](val)
         except ValueError:
@@ -446,7 +450,7 @@ class AFM:
 
     def get_fullname(self):
         "Return the font full name, eg, 'Times-Roman'"
-        name = self._header.get('FullName')
+        name = self._header.get(b'FullName')
         if name is None: # use FontName as a substitute
             name = self._header[b'FontName']
         return name
@@ -502,6 +506,6 @@ if __name__=='__main__':
     pathname = '/usr/local/share/fonts/afms/adobe'
 
     for fname in os.listdir(pathname):
-        fh = open(os.path.join(pathname,fname))
-        afm = AFM(fh)
-        w,h =  afm.string_width_height('John Hunter is the Man!')
+        with open(os.path.join(pathname,fname)) as fh:
+            afm = AFM(fh)
+            w,h =  afm.string_width_height('John Hunter is the Man!')
